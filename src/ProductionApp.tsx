@@ -1,3 +1,4 @@
+import { AdminExplorer } from "./ui/AdminExplorer";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
@@ -17,6 +18,7 @@ import {
 } from "./activities/ActivityRendererRegistry";
 import {
   cloud,
+  adminCloud,
   loadManifest,
   loadProgress,
   rpc,
@@ -71,6 +73,8 @@ type Leader = {
 };
 const fmt = (n: number | null) => (n ?? 0).toLocaleString("ar-EG");
 export function ProductionApp() {
+  const [adminMode,setAdminMode]=useState(false);
+  useEffect(()=>{let live=true;void adminCloud?.rpc("rpc_get_admin_session_status").then(({data})=>{if(live&&data?.isAdmin)setAdminMode(true);});const sub=adminCloud?.auth.onAuthStateChange(event=>{if(event==="SIGNED_OUT")setAdminMode(false);});return()=>{live=false;sub?.data.subscription.unsubscribe();};},[]);
   const [manifest, setManifest] = useState(DIGESTION_CURRICULUM_MANIFEST),
     [state, setState] = useState<StudentProgressState | null>(null),
     [screen, setScreen] = useState<Screen>(
@@ -338,6 +342,7 @@ export function ProductionApp() {
     { id: "leaderboard", label: "المتصدرون", Icon: Trophy },
     { id: "instructions", label: "المساعدة", Icon: BookOpen },
   ] as const;
+  if(adminMode && screen!=="admin") return <AdminExplorer onManage={()=>go("admin")} onExit={()=>{setAdminMode(false);go("entry");}}/>;
   return (
     <div className="journey-app" dir="rtl">
       <a className="skip-link" href="#content">
@@ -902,6 +907,7 @@ export function ProductionApp() {
               <React.Suspense fallback={<p role="status">تحميل الإدارة…</p>}>
                 <Admin
                   manifest={manifest}
+                  onExplore={()=>{setAdminMode(true);go("map");}}
                   onPublished={async () => setManifest(await loadManifest())}
                 />
               </React.Suspense>

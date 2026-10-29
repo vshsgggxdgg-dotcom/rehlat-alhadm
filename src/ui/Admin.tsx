@@ -20,9 +20,11 @@ type Version = { content_version_id: string; status: string };
 export function Admin({
   manifest,
   onPublished,
+  onExplore,
 }: {
   manifest: CurriculumManifest;
   onPublished: () => Promise<void>;
+  onExplore: () => void;
 }) {
   const [previewDraft, setPreviewDraft] = useState("");
   const [previewMessage, setPreviewMessage] = useState("");
@@ -48,6 +50,7 @@ export function Admin({
       if (error) throw error;
       setVersions(data ?? []);
     }
+    return d.isAdmin === true;
   }
   async function action(fn: () => Promise<void>) {
     setBusy(true);
@@ -120,7 +123,8 @@ export function Admin({
               });
               setPassword("");
               if (error) throw error;
-              await status();
+              if(await status()) onExplore();
+              else setNotice("هذا الحساب ليس لديه صلاحية الإدارة.");
             });
           }}
         >
@@ -162,6 +166,7 @@ export function Admin({
           >
             تسجيل الخروج
           </button>
+          <button className="btn btn--primary" onClick={onExplore}>افتح الموقع بكل المستويات والأسئلة</button>
           <StudentReports />
           <label>
             نسخة المحتوى
