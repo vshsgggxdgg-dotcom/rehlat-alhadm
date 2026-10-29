@@ -1,0 +1,49 @@
+# ============================================================================
+# رحلة الهضم (Digestion Journey) — Supabase Project Configuration
+# ============================================================================
+project_id = "rehlat-alhadm-grade6"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 100
+
+[db]
+port = 54322
+major_version = 17
+
+[auth]
+enabled = true
+site_url = "http://localhost:5173"
+additional_redirect_urls = ["http://localhost:5173"]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+enable_signup = true
+# Enable Supabase Anonymous Auth for student sessions in production
+enable_anonymous_sign_ins = true
+
+# Abuse protection & rate limits for anonymous sign-ins and auth endpoints
+[auth.rate_limit]
+anonymous_users = 30
+token_refresh = 60
+sign_in_sign_ups = 20
+
+[auth.captcha]
+# Recommended in production: enable Turnstile/hCaptcha to protect anonymous sign-ins
+enabled = false
+provider = "turnstile"
+secret = "env(SUPABASE_AUTH_CAPTCHA_SECRET)"
+
+[storage]
+enabled = true
+file_size_limit = "5MiB"
+
+[functions.submit-activity-attempt]
+verify_jwt = true
+
+[functions.admin-publish-version]
+verify_jwt = true
+
