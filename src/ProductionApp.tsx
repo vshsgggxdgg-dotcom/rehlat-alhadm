@@ -593,11 +593,17 @@ export function ProductionApp() {
                   onDraftOptionChange={draft}
                   onSubmitAttempt={submit}
                   nextActionLabelAr={
-                    ai === level.activities.length - 1
-                      ? "شوف إنجازك"
-                      : "التحدي التالي"
+                    practice
+                      ? "الرجوع لخطة المراجعة"
+                      : ai === level.activities.length - 1
+                        ? "شوف إنجازك"
+                        : "التحدي التالي"
                   }
                   onNextAction={() => {
+                    if (practice) {
+                      go("dashboard");
+                      return;
+                    }
                     if (ai < level.activities.length - 1) setAi((i) => i + 1);
                     else {
                       soundEffects.play("badge");
