@@ -2,9 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { applyRevealedAnswer } from "../backend/disclosure";
 import {
   AlertTriangle,
-  ArrowDown,
   ArrowLeft,
-  ArrowUp,
   Award,
   CheckCircle2,
   CircleDot,
@@ -697,16 +695,7 @@ export const ActivityRendererRegistry: React.FC<ActivityRendererProps> = ({
       setDragOverOrderIndex(null);
     };
 
-    const swapRelative = (index: number, delta: -1 | 1) => {
-      if (disabled || isFinished) return;
-      const nextIndex = index + delta;
-      if (nextIndex < 0 || nextIndex >= currentOrderIds.length) return;
-      const next = [...currentOrderIds];
-      const temp = next[index];
-      next[index] = next[nextIndex];
-      next[nextIndex] = temp;
-      onDraftOptionChange(next.join(">"));
-    };
+
 
     const activeMovingId = draggedOrderItemId ?? grabbedOrderItemId;
 
@@ -894,34 +883,7 @@ export const ActivityRendererRegistry: React.FC<ActivityRendererProps> = ({
                     <span className="ordering-card__label">{item.labelAr}</span>
                   </button>
 
-                  {!disabled && !isFinished && (
-                    <div
-                      className="ordering-card__keyboard-alt"
-                      role="group"
-                      aria-label={`بديل لوحة المفاتيح لنقل ${item.labelAr}`}
-                    >
-                      <button
-                        type="button"
-                        className="ordering-alt-btn"
-                        disabled={idx === 0}
-                        onClick={() => swapRelative(idx, -1)}
-                        aria-label={`تقديم ${item.labelAr} خطوة للأعلى`}
-                        title="بديل لوحة المفاتيح: لأعلى"
-                      >
-                        <ArrowUp size={15} aria-hidden="true" />
-                      </button>
-                      <button
-                        type="button"
-                        className="ordering-alt-btn"
-                        disabled={idx === currentOrderIds.length - 1}
-                        onClick={() => swapRelative(idx, 1)}
-                        aria-label={`تأخير ${item.labelAr} خطوة للأسفل`}
-                        title="بديل لوحة المفاتيح: لأسفل"
-                      >
-                        <ArrowDown size={15} aria-hidden="true" />
-                      </button>
-                    </div>
-                  )}
+
                 </div>
               </React.Fragment>
             );
@@ -1206,13 +1168,13 @@ export const ActivityRendererRegistry: React.FC<ActivityRendererProps> = ({
             }`}
             aria-label={
               isFinished
-                ? `الموضع (${hs.calloutLetterAr}): ${hs.postConfirmationOrganNameAr}`
+                ? `الموضع (${isSelected ? hs.postConfirmationOrganNameAr : ""}): ${hs.postConfirmationOrganNameAr}`
                 : hs.preConfirmationPositionLabelAr
             }
             aria-pressed={isSelected}
           >
             <span className="anatomy-hotspot__letter">
-              {hs.calloutLetterAr}
+              {isSelected ? hs.postConfirmationOrganNameAr : ""}
             </span>
           </button>
         );
@@ -1224,7 +1186,7 @@ export const ActivityRendererRegistry: React.FC<ActivityRendererProps> = ({
             <MousePointerClick size={16} aria-hidden="true" />
             <span>
               انقر مباشرةً على العضو أو الموضع التشريحي المطلوب فوق الرسم
-              التوضيحي (أ، ب، ج، د):
+              التوضيحي؛ سيظهر اسم الجزء عند اختياره:
             </span>
           </p>
 
@@ -1240,7 +1202,7 @@ export const ActivityRendererRegistry: React.FC<ActivityRendererProps> = ({
               {asset.hotspots.map((hs) => (
                 <React.Fragment key={hs.zoneId}>
                   {renderHotspotButton(hs, "organ")}
-                  {renderHotspotButton(hs, "badge")}
+
                 </React.Fragment>
               ))}
             </div>
@@ -1271,12 +1233,10 @@ export const ActivityRendererRegistry: React.FC<ActivityRendererProps> = ({
                   }`}
                 >
                   <span className="anatomy-zone-pill__badge">
-                    {hs.calloutLetterAr}
+                    {isSelected ? hs.postConfirmationOrganNameAr : ""}
                   </span>
                   <span className="anatomy-zone-pill__desc">
-                    {isFinished
-                      ? hs.postConfirmationOrganNameAr
-                      : hs.preConfirmationPositionLabelAr}
+                    {hs.postConfirmationOrganNameAr}
                   </span>
                 </button>
               );
@@ -1411,14 +1371,14 @@ export const ActivityRendererRegistry: React.FC<ActivityRendererProps> = ({
                   } ${activeImageLabelId ? "anatomy-drop-pin--ready" : ""} ${
                     isCorrectPin ? "anatomy-drop-pin--correct" : ""
                   } ${isWrongPin ? "anatomy-drop-pin--incorrect" : ""}`}
-                  aria-label={`الموضع (${hs.calloutLetterAr}): ${
+                  aria-label={`الموضع (${hs.preConfirmationPositionLabelAr}): ${
                     assignedLabel
                       ? assignedLabel.labelAr
                       : "بانتظار وضع المسمّى"
                   }`}
                 >
                   <span className="anatomy-drop-pin__letter">
-                    {hs.calloutLetterAr}
+                    {hs.preConfirmationPositionLabelAr}
                   </span>
                   <span className="anatomy-drop-pin__value">
                     {assignedLabel ? assignedLabel.labelAr : "ضع المسمّى هنا"}

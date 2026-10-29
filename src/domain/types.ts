@@ -68,6 +68,7 @@ export type AssetApprovalStatus =
   | 'pending_content_review';
 
 export interface StudentProfile {
+  readonly className?: string;
   readonly studentId: StudentId;
   readonly displayName: string;
   readonly gradeLevel: 'grade-6';

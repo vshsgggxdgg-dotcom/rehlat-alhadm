@@ -212,6 +212,7 @@ export async function loadProgress(): Promise<StudentProgressState | null> {
     student: {
       studentId: asStudentId(p.student_id),
       displayName: p.display_name,
+      className: p.class_name,
       avatarId: p.avatar_id as AvatarId,
       gradeLevel: "grade-6",
       authProvider: "supabase_anonymous",
@@ -230,15 +231,26 @@ export async function startStudent(
   name: string,
   avatar: string,
   version: string,
+  className: string,
 ) {
   const {
     data: { session },
   } = await client().auth.getSession();
+  if (session) {
+    const { data: current, error: profileError } = await client().from('student_profiles').select('display_name,class_name').eq('auth_user_id', session.user.id).maybeSingle();
+    if (profileError) throw profileError;
+    if (current?.class_name && (current.class_name !== className || current.display_name !== name.trim().replace(/\s+/g, ' '))) {
+      await client().auth.signOut({scope:'local'});
+      const {error} = await client().auth.signInAnonymously();
+      if(error) throw error;
+    }
+  }
   if (!session) {
     const { error } = await client().auth.signInAnonymously();
     if (error) throw error;
   }
-  await rpc("rpc_ensure_student_session", {
+  await rpc("rpc_enter_class_student", {
+    p_class_name: className,
     p_display_name: name,
     p_avatar_id: avatar,
     p_content_version_id: version,
