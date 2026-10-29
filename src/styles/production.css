@@ -760,3 +760,17 @@ progress::-webkit-progress-value {
   filter: grayscale(1);
   opacity: 0.4;
 }
+
+/* Direct anatomical selection and tactile ordering. */
+.anatomy-hotspot--organ { background:transparent; border:2px solid transparent; box-shadow:none; min-width:44px; min-height:44px; }
+.anatomy-hotspot--organ:hover,.anatomy-hotspot--organ:focus-visible { border-color:#8e354a; background:#8e354a18; }
+.anatomy-hotspot--selected { border-color:#8e354a!important; background:#8e354a22!important; }
+.anatomy-hotspot__letter { white-space:nowrap; width:auto; background:#fff8ed; color:#672739; border-radius:10px; padding:4px 8px; pointer-events:none; }
+.anatomy-hotspot__letter:empty { display:none; }
+.anatomy-accessible-controls { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+.anatomy-accessible-controls:focus-within { position:static; width:auto; height:auto; clip-path:none; }
+.ordering-card { transition:transform .18s ease,box-shadow .18s ease,background .18s ease; }
+.ordering-card--grabbed { transform:scale(1.035) rotate(-1deg); box-shadow:0 12px 24px #67273925; }
+.ordering-insertion-slot { transition:min-height .18s ease, background .18s ease; }
+.admin-preview { padding:20px; margin-block:24px; border:1px solid #ddcfc2; border-radius:20px; }
+@media(prefers-reduced-motion:reduce){ .ordering-card,.ordering-insertion-slot { transition:none; transform:none; } }

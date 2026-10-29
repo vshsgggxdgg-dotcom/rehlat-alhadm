@@ -80,6 +80,7 @@ export function ProductionApp() {
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [name, setName] = useState(""),
+    [className, setClassName] = useState("6/1"),
     [avatar, setAvatar] = useState<AvatarId>("girl-noor");
   const [li, setLi] = useState(0),
     [ai, setAi] = useState(0),
@@ -146,7 +147,8 @@ export function ProductionApp() {
         if (s) {
           setName(s.student.displayName);
           setAvatar(s.student.avatarId);
-          if (location.pathname !== "/admin") setScreen("map");
+          if (location.pathname !== "/admin") setScreen(s.student.className ? "map" : "entry");
+          if(s.student.className) setClassName(s.student.className);
         }
       } catch {
         if (live) setError("تعذّر الاتصال. تحقق من الإنترنت ثم أعد المحاولة.");
@@ -209,13 +211,15 @@ export function ProductionApp() {
         name.trim(),
         avatar,
         manifest.contentVersionId,
+        className,
       );
       if (!s) throw Error();
       setState(s);
+      setManifest(await loadManifest(s.lastContentVersionId));
       setReturnTo("map");
-      go("instructions");
-    } catch {
-      setError("تعذّر بدء الرحلة. حاول مرة أخرى أو اطلب مساعدة مسؤول الموقع.");
+      go(s.attempts.length ? "map" : "instructions");
+    } catch (e) {
+      setError((e as {message?:string}).message ?? "تعذّر بدء الرحلة. حاول مرة أخرى أو اطلب مساعدة مسؤول الموقع.");
     } finally {
       setBusy(false);
     }
@@ -276,7 +280,7 @@ export function ProductionApp() {
     } catch {
       await refresh().catch(() => {});
       setError(
-        "تعذّر تأكيد الحفظ. إجابتك محفوظة؛ اضغط التأكيد لإعادة المحاولة.",
+        "تعذّر تأكيد الحفظ على الخادم. أعد المحاولة؛ وإذا انتهت جلسة الدخول اختر استرجاع حسابي.",
       );
       throw Error("Submission failed");
     } finally {
@@ -367,6 +371,7 @@ export function ProductionApp() {
           </nav>
         )}
         <div className="header-tools">
+          {state && screen !== "admin" && <button onClick={async()=>{await cloud?.auth.signOut({scope:"local"});setState(null);setName("");go("entry");}}>تبديل الطالب</button>}
           <button
             aria-label={settings.soundMuted ? "تشغيل الصوت" : "كتم الصوت"}
             onClick={() => {
@@ -385,7 +390,7 @@ export function ProductionApp() {
         {error && (
           <div role="alert" className="journey-error">
             {error}
-            <button onClick={() => location.reload()}>إعادة الاتصال</button>
+            <button onClick={() => location.reload()}>إعادة الاتصال</button><button onClick={async()=>{await cloud?.auth.signOut({scope:"local"});setState(null);go("entry");}}>استرجاع حسابي بالاسم والفصل</button>
           </div>
         )}
         {loading ? (
@@ -430,14 +435,15 @@ export function ProductionApp() {
                   <label htmlFor="student-name">اسمك إيه؟</label>
                   <input
                     id="student-name"
-                    autoComplete="given-name"
+                    autoComplete="name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
-                    minLength={2}
-                    maxLength={40}
-                    placeholder="اسمك الأول كفاية"
+                    minLength={5} pattern="[^ ]+ +[^ ]+ +.+"
+                    maxLength={60}
+                    placeholder="اسمك الثلاثي على الأقل"
                   />
+                  <label htmlFor="student-class">الفصل</label><select id="student-class" value={className} onChange={e=>setClassName(e.target.value)}>{Array.from({length:20},(_,i)=><option key={i} value={`6/${i+1}`}>سادسة / {i+1}</option>)}</select>
                   <fieldset>
                     <legend>اختار صاحبك في الرحلة</legend>
                     <div className="avatar-grid">
@@ -465,7 +471,7 @@ export function ProductionApp() {
                     {busy ? "بنحفظ رحلتك…" : "يلا نبدأ الرحلة"}
                     <ArrowLeft size={20} />
                   </button>
-                  <small>اسمك للعرض. تقدمك مرتبط بجلستك على هذا المتصفح.</small>
+                  <small>اكتب نفس الاسم الثلاثي والفصل كل مرة لاسترجاع تقدمك من قاعدة البيانات.</small>
                 </form>
               </section>
             )}

@@ -1,3 +1,6 @@
+import { StudentReports } from "./StudentReports";
+import { ActivityRendererRegistry } from "../activities/ActivityRendererRegistry";
+import { applyRevealedAnswer } from "../backend/disclosure";
 import { useEffect, useState } from "react";
 import { adminCloud, loadManifest } from "../backend/cloud";
 const client = () => {
@@ -21,6 +24,8 @@ export function Admin({
   manifest: CurriculumManifest;
   onPublished: () => Promise<void>;
 }) {
+  const [previewDraft, setPreviewDraft] = useState("");
+  const [previewMessage, setPreviewMessage] = useState("");
   const [allowed, setAllowed] = useState(false),
     [email, setEmail] = useState(""),
     [password, setPassword] = useState(""),
@@ -95,6 +100,7 @@ export function Admin({
   useEffect(() => {
     const a = activities.find((a) => a.activityId === selected);
     setEditor(a ? JSON.stringify(a, null, 2) : "");
+    setPreviewDraft(""); setPreviewMessage("");
   }, [selected, activities]);
   const isDraft =
     versions.find((v) => v.content_version_id === version)?.status === "draft";
@@ -156,6 +162,7 @@ export function Admin({
           >
             تسجيل الخروج
           </button>
+          <StudentReports />
           <label>
             نسخة المحتوى
             <select
@@ -209,6 +216,14 @@ export function Admin({
               ))}
             </select>
           </label>
+          {activities.filter(a => a.activityId === selected).map(a => <section key={a.activityId} className="admin-preview">
+            <h2>معاينة النشاط — كل الأنشطة مفتوحة للإدارة</h2>
+            <p>التجربة هنا لا تُسجّل درجات أو محاولات للطلاب.</p>
+            <ActivityRendererRegistry activity={applyRevealedAnswer(a, a.correctOptionId)} activityIndex={0} totalActivitiesInLevel={1} studentName="الإدارة" draftSelectedOptionId={previewDraft} previousAttempts={[]} disabled={false} onDraftOptionChange={setPreviewDraft} onSubmitAttempt={p => setPreviewMessage(p.selectedOptionId === a.correctOptionId ? "إجابة صحيحة" : "إجابة غير صحيحة — راجع الإجابة النموذجية أدناه")} />
+            <p role="status">{previewMessage}</p>
+            <details><summary>عرض الإجابة والتفسير بدون حل النشاط</summary><p>{a.correctOptionId}</p><p>{a.scientificHintAr}</p><p>{a.scientificExplanationAr}</p></details>
+          </section>)}
+          <fieldset disabled={!isDraft || busy}><legend>تعديل محتوى النشاط</legend>{(['titleAr','promptAr','scientificHintAr','scientificExplanationAr'] as const).map((field,i)=><label key={field}>{['عنوان النشاط','السؤال','التلميح','التفسير العلمي'][i]}<textarea rows={3} value={(()=>{try{return JSON.parse(editor)[field] ?? '';}catch{return '';}})()} onChange={e=>{try{setEditor(JSON.stringify({...JSON.parse(editor),[field]:e.target.value},null,2));}catch{setNotice('صحح بيانات النشاط أولاً');}}}/></label>)}</fieldset>
           <label>
             بيانات النشاط المعتمد
             <textarea
@@ -283,3 +298,5 @@ export function Admin({
     </section>
   );
 }
+
+
