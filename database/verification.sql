@@ -1,0 +1,33 @@
+begin;
+insert into auth.users(id,raw_user_meta_data,is_anonymous) values('11111111-1111-4111-a111-111111111111','{"display_name":"اختبار مستكشف","role":"teacher"}',false),('22222222-2222-4222-a222-222222222222','{"display_name":"اختبار آخر"}',false);
+do $$
+declare cid uuid;d jsonb;student jsonb;result jsonb;q jsonb;s jsonb;total int;draft uuid;blocked boolean;
+begin
+ select id,document into cid,d from public.ae_courses where owner_id is null and status='published' limit 1;
+ perform set_config('request.jwt.claim.sub','11111111-1111-4111-a111-111111111111',true);
+ assert public.ae_me()->>'role'='student','editable metadata must not grant teacher';
+ student:=public.ae_get_course(cid);
+ assert not(student->'document'->'stations'->0->'questions'->0 ? 'answer'),'answer leak';
+ assert not(student ? 'source'),'source leak';
+ blocked:=false;begin perform public.ae_submit(cid,'f-q1',0);exception when others then blocked:=true;end;assert blocked,'final unlock bypass';
+ blocked:=false;begin perform public.ae_save_draft(null,d,'');exception when others then blocked:=true;end;assert blocked,'student can publish content';
+ result:=public.ae_submit(cid,'s1-q1',0);assert (result->>'score')::int=0 and result->'answer'='null'::jsonb,'wrong first answer';
+ result:=public.ae_submit(cid,'s1-q1',1);assert (result->>'score')::int=1,'second-attempt partial credit';
+ result:=public.ae_submit(cid,'s1-q1',1);assert (result->>'attempts')::int=2 and (result->>'score')::int=1,'replay inflated score';
+ for s in select value from jsonb_array_elements(d->'stations') loop for q in select value from jsonb_array_elements(s->'questions') loop perform public.ae_submit(cid,q->>'id',(q->>'answer')::int);end loop;end loop;
+ for q in select value from jsonb_array_elements(d->'final') loop perform public.ae_submit(cid,q->>'id',(q->>'answer')::int);end loop;
+ select sum(score) into total from public.ae_answers where user_id=auth.uid() and course_id=cid;assert total=98,'total score must be 98';
+ assert jsonb_array_length(public.ae_review(cid))=28,'review incomplete';
+ perform set_config('request.jwt.claim.sub','22222222-2222-4222-a222-222222222222',true);perform public.ae_me();
+ assert jsonb_array_length(public.ae_progress(cid))=0,'cross-student progress leak';
+ update public.ae_profiles set role='teacher' where id=auth.uid();
+ draft:=(public.ae_save_draft(null,d,'reference')->>'id')::uuid;
+ assert public.ae_get_course(draft)->>'status'='draft','draft save';perform public.ae_publish(draft);
+ blocked:=false;begin perform public.ae_save_draft(draft,d,'reference');exception when others then blocked:=true;end;assert blocked,'published version mutable';
+ blocked:=false;begin perform public.ae_validate('{}');exception when others then blocked:=true;end;assert blocked,'invalid content accepted';
+ assert not has_function_privilege('anon','public.ae_get_course(uuid)','execute'),'anon execution';
+ assert not has_table_privilege('authenticated','public.ae_courses','select'),'raw answer table exposed';
+ assert not has_table_privilege('authenticated','public.ae_answers','insert'),'client can forge grade';
+end $$;
+select 'PASS: role isolation, hidden keys, final lock, partial credit, replay safety, 98/100 scoring, cross-student isolation, drafts, immutable publication and input validation' as verification;
+rollback;

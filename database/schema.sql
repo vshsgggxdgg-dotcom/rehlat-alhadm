@@ -18,7 +18,7 @@ create policy ae_answers_self on public.ae_answers for select to authenticated u
 
 create function public.ae_me() returns jsonb language plpgsql security definer set search_path='' as $$
 declare p public.ae_profiles; begin
- if auth.uid() is null then raise exception 'سجّل الدخول أولًا'; end if;
+ if auth.uid() is null or exists(select 1 from auth.users where id=auth.uid() and is_anonymous) then raise exception 'سجّل الدخول بحساب بريد إلكتروني أولًا'; end if;
  select * into p from public.ae_profiles where id=auth.uid();
  if p.id is null then
   insert into public.ae_profiles(id,display_name) values(auth.uid(),coalesce(nullif(left((select raw_user_meta_data->>'display_name' from auth.users where id=auth.uid()),100),''),'مستكشف جديد')) returning * into p;
@@ -47,7 +47,7 @@ declare c public.ae_courses; d jsonb;s jsonb;q jsonb;ss jsonb:='[]';qq jsonb;ff 
  p:=public.ae_me();select * into c from public.ae_courses where id=p_id;
  if c.id is null or (c.status<>'published' and c.owner_id is distinct from auth.uid()) then raise exception 'الدرس غير متاح';end if;
  d:=c.document;
- if p->>'role'='teacher' and (c.owner_id=auth.uid() or c.owner_id is null) then return jsonb_build_object('id',c.id,'document',d,'source',c.source,'status',c.status);end if;
+ if p->>'role'='teacher' then return jsonb_build_object('id',c.id,'document',d,'source',c.source,'status',c.status);end if;
  for s in select value from jsonb_array_elements(d->'stations') loop
   qq:='[]';for q in select value from jsonb_array_elements(s->'questions') loop qq:=qq||jsonb_build_array(q-'answer'-'explanation');end loop;
   ss:=ss||jsonb_build_array(jsonb_set(s,'{questions}',qq));
@@ -58,14 +58,17 @@ declare c public.ae_courses; d jsonb;s jsonb;q jsonb;ss jsonb:='[]';qq jsonb;ff 
 end $$;
 create function public.ae_validate(p_document jsonb) returns void language plpgsql set search_path='' as $$
 declare s jsonb;q jsonb;ids text[]:='{}';i int:=0;begin
- if jsonb_typeof(p_document)<>'object' or length(p_document->>'title') not between 3 and 160 or octet_length(p_document::text)>180000 or jsonb_array_length(p_document->'stations')<>4 or jsonb_array_length(p_document->'final')<>8 then raise exception 'بنية الدرس غير صالحة';end if;
+ if p_document is null or coalesce(jsonb_typeof(p_document),'')<>'object' or coalesce(jsonb_typeof(p_document->'title'),'')<>'string' or coalesce(length(p_document->>'title'),0) not between 3 and 160 or octet_length(p_document::text)>180000 or coalesce(jsonb_typeof(p_document->'stations'),'')<>'array' or coalesce(jsonb_typeof(p_document->'final'),'')<>'array' then raise exception 'بنية الدرس غير صالحة';end if;
+ if jsonb_array_length(p_document->'stations')<>4 or jsonb_array_length(p_document->'final')<>8 then raise exception 'عدد المحطات أو الأسئلة غير صالح';end if;
  for s in select value from jsonb_array_elements(p_document->'stations') loop
   i:=i+1;
-  if (s->>'id')::int<>i or length(s->>'title')<1 or jsonb_array_length(s->'cards') not between 1 and 12 or jsonb_array_length(s->'questions')<>5 then raise exception 'راجع بيانات المحطات';end if;
+  if coalesce((s->>'id')::int,0)<>i or coalesce(length(s->>'title'),0)<1 or coalesce(jsonb_typeof(s->'cards'),'')<>'array' or coalesce(jsonb_typeof(s->'questions'),'')<>'array' then raise exception 'راجع بيانات المحطات';end if;
+  if jsonb_array_length(s->'cards') not between 1 and 12 or jsonb_array_length(s->'questions')<>5 then raise exception 'راجع عدد البطاقات والأسئلة';end if;
   for q in select value from jsonb_array_elements(s->'cards') loop if coalesce(length(q->>'title'),0)<1 or coalesce(length(q->>'text'),0)<1 then raise exception 'بطاقة فارغة';end if;end loop;
  end loop;
  for q in select value from jsonb_array_elements(p_document->'final') union all select question.value from jsonb_array_elements(p_document->'stations') section cross join lateral jsonb_array_elements(section.value->'questions') question loop
-  if coalesce(q->>'id','')!~'^[a-z0-9-]{1,60}$' or q->>'id'=any(ids) or coalesce(length(q->>'prompt'),0)<1 or jsonb_array_length(q->'options')<>4 or (q->>'answer')::int not between 0 and 3 or coalesce(length(q->>'explanation'),0)<1 then raise exception 'سؤال غير صالح';end if;
+  if coalesce(q->>'id','')!~'^[a-z0-9-]{1,60}$' or q->>'id'=any(ids) or coalesce(length(q->>'prompt'),0)<1 or coalesce(jsonb_typeof(q->'options'),'')<>'array' or coalesce(jsonb_typeof(q->'answer'),'')<>'number' or coalesce((q->>'answer')::numeric,-1) not between 0 and 3 or coalesce(length(q->>'explanation'),0)<1 then raise exception 'سؤال غير صالح';end if;
+  if jsonb_array_length(q->'options')<>4 or exists(select 1 from jsonb_array_elements(q->'options') opt where jsonb_typeof(opt)<>'string' or length(opt#>>'{}')<1) or (q->>'answer')::numeric<>trunc((q->>'answer')::numeric) then raise exception 'اختيارات أو إجابة غير صالحة';end if;
   if (select count(distinct value) from jsonb_array_elements_text(q->'options'))<>4 then raise exception 'الاختيارات يجب أن تكون مختلفة';end if;
   ids:=array_append(ids,q->>'id');
  end loop;
