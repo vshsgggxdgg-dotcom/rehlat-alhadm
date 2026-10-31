@@ -13,7 +13,7 @@ declare c public.ae_courses;root uuid;begin
  return coalesce((select jsonb_agg(jsonb_build_object('id',id,'source_id',source_id,'station',station,'question',question,'active',active) order by station,created_at) from public.ae_question_bank where source_id=root),'[]'::jsonb);
 end $$;
 create function public.ae_bank_save(p_source uuid,p_station integer,p_question jsonb,p_active boolean default true) returns uuid language plpgsql security definer set search_path='' as $$
-declare c public.ae_courses;root uuid;result uuid;begin
+declare c public.ae_courses;root uuid;result uuid;section jsonb;entry jsonb;begin
  if(public.ae_me()->>'role')<>'teacher' then raise exception 'صلاحية المعلم مطلوبة';end if;
  select * into c from public.ae_courses where id=p_source and (owner_id=auth.uid() or owner_id is null);
  if c.id is null then raise exception 'يمكنك تعديل بنك دروسك أو الدرس الأساسي فقط';end if;
@@ -21,6 +21,11 @@ declare c public.ae_courses;root uuid;result uuid;begin
  if not exists(select 1 from public.ae_courses where id=root and (owner_id=auth.uid() or owner_id is null)) then raise exception 'لا تملك هذا البنك';end if;
  if p_station is null or p_station not between 1 and 5 or coalesce(p_question->>'id','')!~'^[a-z0-9-]{1,60}$' or coalesce(length(p_question->>'prompt'),0)<3 or coalesce(jsonb_typeof(p_question->'options'),'')<>'array' or coalesce(jsonb_typeof(p_question->'answer'),'')<>'number' or coalesce(length(p_question->>'explanation'),0)<3 then raise exception 'بيانات السؤال غير مكتملة';end if;
  if jsonb_array_length(p_question->'options')<>4 or (p_question->>'answer')::numeric not between 0 and 3 or (p_question->>'answer')::numeric<>trunc((p_question->>'answer')::numeric) or (select count(distinct value) from jsonb_array_elements_text(p_question->'options'))<>4 or exists(select 1 from jsonb_array_elements(p_question->'options') opt where jsonb_typeof(opt)<>'string' or length(opt#>>'{}')<1) then raise exception 'راجع الاختيارات والإجابة الصحيحة';end if;
+ if exists(select 1 from public.ae_question_bank where source_id=root and question_id<>p_question->>'id' and question->>'prompt'=p_question->>'prompt') then raise exception 'هذا السؤال موجود بالفعل؛ حرّر نسخته الحالية';end if;
+ if not exists(select 1 from public.ae_question_bank where source_id=root) then
+  for section in select value from jsonb_array_elements(c.document->'stations') loop for entry in select value from jsonb_array_elements(section->'questions') loop insert into public.ae_question_bank(source_id,station,question_id,question,created_by) values(root,(section->>'id')::int,entry->>'id',entry,auth.uid()) on conflict do nothing;end loop;end loop;
+  for entry in select value from jsonb_array_elements(c.document->'final') loop insert into public.ae_question_bank(source_id,station,question_id,question,created_by) values(root,5,entry->>'id',entry,auth.uid()) on conflict do nothing;end loop;
+ end if;
  insert into public.ae_question_bank(source_id,station,question_id,question,active,created_by) values(root,p_station,p_question->>'id',p_question,p_active,auth.uid()) on conflict(source_id,question_id) do update set station=excluded.station,question=excluded.question,active=excluded.active returning id into result;
  return result;
 end $$;
