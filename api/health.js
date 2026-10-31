@@ -1,1 +1,1 @@
-export default function(req,res){res.setHeader('Cache-Control','no-store');res.status(200).json({ok:true,service:'africa-explorer',cloud:Boolean(process.env.SUPABASE_URL),generationConfigured:Boolean(process.env.AI_GATEWAY_API_KEY||req.headers['x-vercel-oidc-token']||process.env.VERCEL_OIDC_TOKEN)});}
+export default function(req,res){res.setHeader('Cache-Control','no-store');res.status(200).json({ok:true,service:'africa-explorer',cloud:Boolean(process.env.SUPABASE_URL),generator:'supabase-question-bank'});}

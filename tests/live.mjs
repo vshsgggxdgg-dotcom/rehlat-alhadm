@@ -15,11 +15,21 @@ const q=complete.document.stations[0].questions[0];
 assert.equal((await rpc('ae_submit',student.token,{p_id:id,p_question:q.id,p_choice:q.answer})).score,3);
 assert.equal((await rpc('ae_progress',student.token,{p_id:id})).length,1);
 console.log('PASS: live API content permissions, server grading and cloud persistence');
-let r=await fetch(site+'/api/generate',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${student.token}`},body:JSON.stringify({source:complete.source})});assert.equal(r.status,403);
-console.log('PASS: students cannot use teacher generation');
+await assert.rejects(rpc('ae_generate_from_bank',student.token,{p_source:id,p_title:'اختبار منع الطالب',p_focus:0}));
+await assert.rejects(rpc('ae_bank_list',student.token,{p_source:id}));
+console.log('PASS: students cannot access bank or teacher generation');
 const draft=await rpc('ae_save_draft',teacher.token,{p_id:null,p_document:complete.document,p_source:complete.source});assert.ok(draft.id);console.log('PASS: teacher cloud draft saved');
-r=await fetch(site+'/api/generate',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${teacher.token}`},body:JSON.stringify({source:complete.source,instructions:'اكتب بأسلوب واضح وموجز.'})});
-const result=await r.json();
-console.log(JSON.stringify({generationStatus:r.status,model:result.model||null,draftId:result.id||null,error:result.error||null}));
-if(r.ok){assert.equal(result.document.stations.length,4);assert.equal(result.document.final.length,8);assert.equal((await rpc('ae_get_course',teacher.token,{p_id:result.id})).status,'draft');console.log('PASS: real AI generation saved as private cloud draft');}
-fs.writeFileSync('../ae-qa-result.json',JSON.stringify({generationStatus:r.status,error:result.error||null,draftId:result.id||null}));
+const bank=await rpc('ae_bank_list',teacher.token,{p_source:id});assert.equal(bank.length,56);
+const result=await rpc('ae_generate_from_bank',teacher.token,{p_source:id,p_title:'اختبار توليد سحابي',p_focus:0});
+const second=await rpc('ae_generate_from_bank',teacher.token,{p_source:id,p_title:'اختبار تنويع النسخ',p_focus:2});
+assert.equal(result.document.stations.length,4);assert.equal(result.document.final.length,8);assert.equal((await rpc('ae_get_course',teacher.token,{p_id:result.id})).status,'draft');
+const all=result.document.stations.flatMap(s=>s.questions).concat(result.document.final);
+assert.equal(new Set(all.map(q=>q.prompt)).size,28);
+for(const q of all){const original=bank.find(b=>b.question.prompt===q.prompt).question;assert.equal(q.options[q.answer],original.options[original.answer]);}
+assert.notDeepEqual(result.document.stations.flatMap(s=>s.questions).map(q=>q.prompt),second.document.stations.flatMap(s=>s.questions).map(q=>q.prompt));
+console.log('PASS: 56-question cloud bank generates varied private drafts with 28 non-repeated questions and correct shuffled answer keys');
+for(const s of complete.document.stations)for(const q of s.questions)await rpc('ae_submit',student.token,{p_id:id,p_question:q.id,p_choice:q.answer});
+for(const q of complete.document.final)await rpc('ae_submit',student.token,{p_id:id,p_question:q.id,p_choice:q.answer});
+const progress=await rpc('ae_progress',student.token,{p_id:id});assert.equal(progress.length,28);assert.equal(progress.reduce((n,a)=>n+a.score,0),100);
+console.log('PASS: full cloud journey, final unlock, 28 answers and 100/100 persisted');
+fs.writeFileSync('../ae-qa-result.json',JSON.stringify({generator:'supabase-question-bank',success:true,draftId:result.id}));

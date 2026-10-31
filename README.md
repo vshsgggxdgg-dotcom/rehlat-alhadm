@@ -8,16 +8,16 @@ Arabic, RTL cloud learning platform for the first preparatory year. Built with b
 - Cloud curriculum, immutable published versions, editable private drafts and original source texts.
 - Four stations, exploration cards, illustrated route map, historical sequence, practice, 20 station questions and 8 final questions.
 - Server-side grading, two attempts, partial second-attempt credit, serialized/idempotent completion, final unlock, saved progress and printable certificate.
-- Teacher generator, visual editor, publish review, teacher invitations, aggregate learner reports and CSV export.
+- Database-driven content generator, editable 56-question cloud bank, visual editor, publish review, teacher invitations, aggregate learner reports and CSV export.
 - Optional browser speech, short sound cues, keyboard controls, responsive layout and reduced-motion support.
 
 ## Hosting
 
 Vercel project: `africa-explorer`. Existing project `rehlat-alhadm` is unchanged. Source is on the separate `africa-explorer` branch in the connected repository. No merge into its main branch is required.
 
-Required environment keys: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`. Generation uses `AI_GATEWAY_MODEL` and Vercel OIDC (`VERCEL_OIDC_TOKEN`); `AI_GATEWAY_API_KEY` is an optional server-side alternative. No service role key is needed or exposed.
+Required environment keys: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`. Generation runs entirely in Supabase using approved cloud content. It needs no AI API, Vercel AI Gateway, model key, paid inference or service role key.
 
-`npm install`, `npm test`, `npm run build`. Build writes only public Supabase configuration to `public/config.js`. `node scripts/preview.mjs` serves the static UI locally; generation requires deployed Vercel Functions.
+`npm install`, `npm test`, `npm run build`. Build writes only public Supabase configuration to `public/config.js`. `node scripts/preview.mjs` serves the static UI locally, including the cloud-backed generator when signed in as a teacher.
 
 ## Database and authorization
 
@@ -29,7 +29,9 @@ Published courses cannot be edited; changes create a new course/version ID. Prog
 
 ## Generation
 
-The teacher submits reference text (150–24,000 characters) and optional guidance. The server authenticates the teacher, limits requests (30 seconds apart, max 20/day), calls AI Gateway, validates all four stations and 28 questions, and saves a private draft. The teacher reviews and publishes explicitly. No template output is presented as successful AI generation. A missing gateway balance or verification produces an actionable error while keeping existing content available.
+The teacher selects a published source course, names the new version and optionally emphasizes a station in the final challenge. `ae_generate_from_bank` runs inside PostgreSQL, selects five random active questions per station and eight additional questions with no prompt repeats, shuffles options while maintaining the correct answer, copies approved explanation cards, validates the result and saves an unpublished cloud draft. No external text-generation service is involved.
+
+The base bank contains 56 reviewed questions: 12 per station and 8 additional final questions. Teachers can add, edit, pause and reactivate questions through authenticated RPCs. Changes to the bank never mutate existing publications or student scores. New sources without expanded banks initialize from their own approved 28 questions. This is generation by composition from stored material, not novel free-form AI writing.
 
 ## Content
 
@@ -37,4 +39,4 @@ The initial course is based on the supplied lesson. The complete supplied refere
 
 ## Verification
 
-`tests/content.test.mjs` checks curriculum coverage and invalid generated output. `database/verification.sql` checks real database authorization, sanitization, scoring, locking and version behavior in a rolled-back transaction. Live authentication and generation checks are reported separately in the handoff.
+`tests/content.test.mjs` checks curriculum/bank coverage and invalid output. `database/verification.sql` checks real database authorization, sanitization, scoring, locking and version behavior in a rolled-back transaction. `tests/live.mjs` verifies real authentication, teacher-only bank access, generated drafts, shuffled correct answers, no repeated prompts, version variety and a complete persisted 100/100 journey. Its disposable account configuration is kept outside this repository.
