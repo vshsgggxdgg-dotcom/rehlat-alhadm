@@ -1,64 +1,40 @@
-# رحلة الهضم
+# مستكشف إفريقيا
 
-تطبيق تعليمي عربي للصف السادس الابتدائي: ٦ مستويات، ٢٦ نشاطًا، ١٨٦ نقطة و٦ شارات. واجهة React وTypeScript بخط Cairo، وتخزين وتقييم فعليان عبر Supabase، ونشر على Vercel.
+Arabic, RTL cloud learning platform for the first preparatory year. Built with browser-native JavaScript, HTML, CSS, PostgreSQL and Node.js Vercel Functions. No React, framework, CDN JavaScript or runtime npm dependencies.
 
-## التشغيل
+## Features
 
-```sh
-npm ci
-npm run dev
-npm run typecheck
-npm run test:backend
-npm run build
-```
+- Email/password student and invited-teacher accounts; password recovery; session refresh.
+- Cloud curriculum, immutable published versions, editable private drafts and original source texts.
+- Four stations, exploration cards, illustrated route map, historical sequence, practice, 20 station questions and 8 final questions.
+- Server-side grading, two attempts, partial second-attempt credit, serialized/idempotent completion, final unlock, saved progress and printable certificate.
+- Teacher generator, visual editor, publish review, teacher invitations, aggregate learner reports and CSV export.
+- Optional browser speech, short sound cues, keyboard controls, responsive layout and reduced-motion support.
 
-انسخ `.env.example` إلى `.env.local` واضبط عنوان Supabase والمفتاح العام فقط. لا تستخدم `service_role` أو مفاتيح سرية في أي متغير `VITE_`.
+## Hosting
 
-## مصدر البيانات والتقييم
+Vercel project: `africa-explorer`. Existing project `rehlat-alhadm` is unchanged. Source is on the separate `africa-explorer` branch in the connected repository. No merge into its main branch is required.
 
-- نقطة الدخول الفعلية `src/ProductionApp.tsx`، وطبقة الاتصال `src/backend/cloud.ts`.
-- يسترجع التطبيق الجلسة والرحلة ومعرّفات الجولات والمحاولات من Supabase. تخزين المتصفح مخصص للجلسة ومسودات الإجابات وطلبات الإعادة الآمنة؛ ليس مصدر الدرجات.
-- يقبل الخادم إجابة الطالب فقط، ويحدد رقم المحاولة وصحتها والدرجة. تُرفض الجولات المتخيلة، وتمنع مفاتيح idempotency احتساب الطلب مرتين.
-- المحتوى المنشور يُقرأ من قاعدة البيانات. `src/content/digestionManifest.ts` نسخة عامة منزوعة الإجابات؛ المحتوى المعتمد الكامل وملفات التهيئة تحت `supabase/` ولا تدخل حزمة المتصفح.
-- التدريب متاح للأنشطة المكتملة فقط، ولا يكتب أي درجات. إعادة المستوى والرحلة تستخدمان RPC على الخادم وتحفظان أفضل النتائج المكتملة.
-- يحتفظ الطالب برحلة مرتبطة بنسخة محتوى ثابتة. النسخ المنشورة لا تقبل التعديل؛ ينشئ المسؤول مسودة وينشر نسخة جديدة.
+Required environment keys: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`. Generation uses `AI_GATEWAY_MODEL` and Vercel OIDC (`VERCEL_OIDC_TOKEN`); `AI_GATEWAY_API_KEY` is an optional server-side alternative. No service role key is needed or exposed.
 
-## قاعدة البيانات والإدارة
+`npm install`, `npm test`, `npm run build`. Build writes only public Supabase configuration to `public/config.js`. `node scripts/preview.mjs` serves the static UI locally; generation requires deployed Vercel Functions.
 
-ملفات SQL في `supabase/migrations/` مرتبة، وتحتوي على RLS وصلاحيات محدودة ودوال التقييم وإعادة اللعب والنشر. قبل تطبيقها على مشروع موجود، راجع حالة migrations وخذ نسخة احتياطية؛ لا تعِد تهيئة قاعدة بيانات تحتوي بيانات.
+## Database and authorization
 
-يجب تفعيل Anonymous sign-ins في إعدادات Supabase Auth. الدخول بالاسم لا يستعيد حسابًا من جهاز آخر، والطلاب متشابهون في الاسم يظلون بهويات مستقلة.
+The `ae_` tables/functions and `ae_private` schema are independent from the existing application. `database/schema.sql` records initial schema; follow-up migrations are recorded in Supabase and in this repository where applicable. Content is served through authenticated RPCs that strip answer keys from student responses. Students can read only their own profiles/answers and have no direct write grants. Teacher role is never derived from editable user metadata. One-use invitations are stored hashed with seven-day expiry.
 
-لوحة الإدارة في `/admin`، بجلسة مستقلة عن جلسة الطالب. الصلاحية الحقيقية من `admin_roles`، ولا تُستمد من الاسم أو بيانات user_metadata. الحساب الرئيسي `super_admin` وحسابات إدارة المنهج `curriculum_admin`. تُنشأ الحسابات بكلمات مرور يختارها أصحابها عبر Supabase Auth. لا يوجد رمز دخول مشترك أو كلمة مرور داخل المصدر.
+SECURITY DEFINER RPCs deliberately mediate private content and grading; each validates the authenticated UID, teacher-only actions check the stored role, and function search paths are fixed. Anonymous execution is revoked. New anonymous Supabase accounts are rejected by `ae_me`; real email/password registration is required. Existing application's authentication configuration is preserved.
 
-يوجد bootstrap اختياري لخادم جديد في مخطط `private`: يضبط المالك البريد المسموح به في `private.owner_bootstrap` من SQL Editor، ثم يُمنح الحساب المؤكد لهذا البريد صلاحية الإدارة مرة واحدة. هذا الجدول غير قابل للقراءة أو التعديل من المتصفح.
+Published courses cannot be edited; changes create a new course/version ID. Progress and scoring refer to that ID. Teacher reports cover their own publications and the shared base curriculum. Practice is ungraded; permanent assessment permits two attempts and retains the result. Review remains available after completion.
 
-محرر الإدارة يحفظ السؤال والخيارات ومفتاح الإجابة والتلميح والتفسير وإعدادات التفاعل. رفع الصور إلى `curriculum-assets` مقصور على المسؤول. عند تغيير صورة تفاعلية، اضبط `visualAssetUrl` و`imageIdentificationConfig.hotspots` وأبعادها ثم راجع كل منطقة ضغط على الموبايل والكمبيوتر قبل النشر.
+## Generation
 
-## التحقق
+The teacher submits reference text (150–24,000 characters) and optional guidance. The server authenticates the teacher, limits requests (30 seconds apart, max 20/day), calls AI Gateway, validates all four stations and 28 questions, and saves a private draft. The teacher reviews and publishes explicitly. No template output is presented as successful AI generation. A missing gateway balance or verification produces an actionable error while keeping existing content available.
 
-نجح فحص TypeScript والبناء وتسعة اختبارات: الجلسة والإدخال الناقص وفشل الشبكة ومنع الإرسال المكرر وسحب اللمس وحماية المحتوى العام. جرى اختبار Supabase فعليًا للدخول المجهول، وعزل طالبين بالاسم نفسه، ومنع قراءة مفاتيح الإجابات وتعديل النقاط، والجولات الفعلية. اختبار SQL داخل معاملة مع rollback تحقق من المحاولتين ونصف الدرجة ومنع التكرار و١٨٦ نقطة و٦ شارات والتأهل للترتيب، دون إضافة نتائج اختبار إلى المتصدرين.
+## Content
 
-اختبار المتصفح تحقق من الدخول والتعليمات والخريطة وإرسال إجابة خاطئة ثم صحيحة، وإظهار تلميح واحد ونصف النقاط والتفسير. راجع تقرير التسليم لمعرفة حدود الاختبارات الفعلية؛ نجاح البناء وحده لا يثبت تفاعلات اللمس أو صحة مواضع الصور.
+The initial course is based on the supplied lesson. The complete supplied reference is stored with the cloud base course. The map is a schematic illustration, not a navigation or historical boundaries map. Simplified lesson explanations avoid repeating disputed details as externally verified facts. New generated material needs teacher review.
 
-## النشر
+## Verification
 
-Vercel: إطار Vite، أمر البناء `npm run build`، ومجلد الناتج `dist`. اضبط `VITE_SUPABASE_URL` و`VITE_SUPABASE_PUBLISHABLE_KEY` في Preview وProduction. `vercel.json` يعيد مسارات الواجهة إلى `index.html`. اختبر نشر Preview قبل نقل النسخة إلى الإنتاج.
-
-## النسخ الاحتياطي والاسترجاع
-
-1. استخدم نسخ Supabase الاحتياطية المتاحة للخطة، واحفظ export دوريًا للـschema والبيانات باستخدام Supabase CLI أو `pg_dump` في مكان خاص ومشفّر؛ لا ترفع ملفات النسخ إلى GitHub.
-2. انسخ ملفات حاوية `curriculum-assets` بشكل مستقل؛ نسخة قاعدة البيانات لا تحتوي الملفات نفسها.
-3. احتفظ بملفات migrations والكود ونسخة الإصدار المنشور. جرّب الاسترجاع إلى مشروع اختبار مستقل قبل أي استرجاع إنتاجي.
-4. يحتفظ Vercel بالإصدارات السابقة لإعادة التوجيه عند الحاجة؛ الرجوع إلى واجهة سابقة لا يعيد قاعدة البيانات تلقائيًا.
-
-لا يوجد تكامل LMS في النسخة الحالية.
-
-
-
-## تحديث إدارة الطلاب والاسترجاع
-الدخول الجديد بالاسم الثلاثي والفصل (مثل 6/1). اختيار مالك المنصة الصريح هو الاسترجاع بدون كلمة مرور أو كود؛ لذلك من يعرف الاسم والفصل يستطيع فتح حساب الطالب. يُعاد ربط نفس سجل الطالب ومحاولاته بالجلسة الجديدة، ولا تُنسخ الدرجات أو تُصفّر. الدخول من جهاز آخر ينقل الجلسة النشطة إليه؛ يمكن استرجاعها بنفس البيانات من الجهاز السابق.
-
-الأسماء المتطابقة تمامًا داخل الفصل نفسه تمثل هوية واحدة في هذا النموذج؛ استخدم الاسم الرباعي للتمييز. الحسابات القديمة تحتفظ ببياناتها، وتحتاج استكمال الاسم والفصل من جلسة الطالب الحالية أو من الإدارة قبل الاسترجاع من جهاز آخر.
-
-لوحة /admin تعرض الطلاب ومحاولاتهم وفلاتر الاسم والفصل، وتصدر XLSX منسقًا بثلاث أوراق: الطلاب والإجابات وجولات المستويات. المعاينة تتيح جميع الأنشطة بدون متطلبات إكمال وبدون تسجيل درجات، مع عرض الإجابة والتفسير. الحفظ والنشر يبقيان بنظام مسودة/نسخة منشورة لحماية تقدم الطلاب في نسخهم الحالية.
+`tests/content.test.mjs` checks curriculum coverage and invalid generated output. `database/verification.sql` checks real database authorization, sanitization, scoring, locking and version behavior in a rolled-back transaction. Live authentication and generation checks are reported separately in the handoff.
