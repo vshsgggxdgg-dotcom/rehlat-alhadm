@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {rpc} from '../lib/server.js';
+test('database void RPC succeeds with 204 empty response',async()=>{const original=globalThis.fetch;globalThis.fetch=async()=>new Response(null,{status:204});try{assert.equal(await rpc('test','ae_generation_slot'),null);}finally{globalThis.fetch=original;}});
+test('database authorization errors preserve actionable message and status',async()=>{const original=globalThis.fetch;globalThis.fetch=async()=>new Response(JSON.stringify({message:'teacher required'}),{status:403});try{await assert.rejects(rpc('test','ae_reports'),e=>e.status===403&&e.message==='teacher required');}finally{globalThis.fetch=original;}});
