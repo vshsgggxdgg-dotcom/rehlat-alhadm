@@ -1,0 +1,24 @@
+import fs from 'node:fs';
+const file='public/app.js';let s=fs.readFileSync(file,'utf8');if(s.includes('createExperience'))throw Error('Already wired');
+s="import {createExperience} from './complete-runtime.js';\n"+s;
+const names=['help','mapView','stationView','passportView','certificateView','finalView','questionEditor','editorView','generatorView','boot','loadCourse'];
+for(const name of names){const re=new RegExp('(async )?function '+name+'\\(');if(!re.test(s))throw Error(name);s=s.replace(re,(_,async='')=>async+'function legacy_'+name+'(');}
+s=s.replace('const stationDone=id=>','const legacy_stationDone=id=>');
+s=s.replace('const allDone=','const stationDone=id=>experience.stationDone(id);\nconst allDone=');
+s=s.replace("const a=b.dataset.action;try{","const a=b.dataset.action;try{if(await experience.handleAction(b,a))return;");
+s=s.replace('function bindForms(){','function bindForms(){experience.bindForms();');
+s=s.replace('{map:mapView,station:',"{mission:()=>experience.mission(),evidence:()=>experience.evidence(),map:mapView,station:");
+s=s.replaceAll("cloud.rpc('ae_reports')","cloud.rpc('ae_v2_reports')");
+s=s.replaceAll("['passport','award','جواز المستكشف']","...(state.course?.document.format===2?[['mission','flag','رسالة المهمة'],['evidence','book','غرفة الأدلة']]:[]),['passport','award','جواز المستكشف']");
+s=s.replace("teacher:'إدارة المحتوى'","mission:'رسالة المهمة',evidence:'غرفة الأدلة',teacher:'إدارة المحتوى'");
+s=s.replace('سؤالًا وتحديًا','سؤالًا مقيّمًا');
+s=s.replace('أختامك الأربعة جاهزة. التحدي النهائي ينتظرك!','أختامك الأربعة جاهزة. اجمع الأدلة وأكمل الرحلة!');
+s=s.replace('[61,65,39,34]','[72,75,47,24]').replace('[29,51,22,56]','[25,52,13,32]');
+s=s.replace('صف مستقل لكل طالب ونسخة.','صف مستقل لكل طالب ونسخة وجولة؛ تُحفظ الجولات السابقة.');
+s=s.replace('${esc(x.display_name)}</td>','${esc(x.display_name)}${x.run_id?`<small class="report-round">${x.active?\'الجولة النشطة\':\'جولة سابقة\'} · ${x.run_id.slice(0,8)}</small>`:\'\'}</td>');
+s=s.replace('الأسئلة المكتملة\',\'آخر نشاط','الأسئلة المكتملة\',\'معرف الجولة\',\'آخر نشاط').replace('r.finished,r.last_active','r.finished,r.run_id||\'نسخة سابقة\',r.last_active');
+s=s.replace('state.editor=d;state.editorSource=',"if(d.format===2)for(const st of d.stations)st.cards=st.pages.flatMap(p=>p.cards).slice(0,12);state.editor=d;state.editorSource=");
+const wrappers=names.map(n=>`${['boot','loadCourse'].includes(n)?'async ':''}function ${n}(...args){return experience.${n}(...args);}`).join('\n');
+const legacy=names.filter(n=>!['boot','loadCourse'].includes(n)).map(n=>n+':legacy_'+n).concat('stationDone:legacy_stationDone','review').join(',');
+s=s.replace('\ninit();',`\nconst experience=createExperience({state,cloud,icon,brand,atlas,esc,ar,toast,showModal,render,go,tone,collectEditor,legacy:{${legacy}}});\n${wrappers}\ninit();`);
+fs.writeFileSync(file,s);
