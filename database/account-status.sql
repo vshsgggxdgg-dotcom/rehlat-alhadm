@@ -14,4 +14,3 @@ begin
  if (public.ae_me()->>'role')<>'teacher' then raise exception 'صلاحية المعلم مطلوبة';end if;
  return coalesce((select jsonb_agg(to_jsonb(r)) from (select p.id,p.display_name,c.id course_id,c.title,sum(a.score) score,count(*) answered,count(*) filter(where a.correct or a.attempts>=2) finished,max(a.updated_at) last_active from public.ae_answers a join public.ae_profiles p on p.id=a.user_id join public.ae_courses c on c.id=a.course_id where not p.disabled and (c.owner_id=auth.uid() or c.owner_id is null) group by p.id,p.display_name,c.id,c.title) r),'[]'::jsonb);
 end $$;
-

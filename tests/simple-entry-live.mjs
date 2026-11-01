@@ -1,0 +1,20 @@
+import fs from 'node:fs';import crypto from 'node:crypto';import assert from 'node:assert/strict';
+const url='https://klyfgdsfwxyavjhoovtz.supabase.co',key='sb_publishable_qTGd0iK7LiXdkMnkWxmDag_GjdJ81-f';
+async function post(path,body,token){const r=await fetch(url+path,{method:'POST',headers:{apikey:key,'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`}:{})},body:JSON.stringify(body)});const d=await r.json().catch(()=>null);if(!r.ok)throw Object.assign(Error(d?.error||d?.message||d?.msg||'Request failed'),{status:r.status});return d;}
+const rpc=(n,b,t)=>post('/rest/v1/rpc/'+n,b,t);
+const stored=JSON.parse(fs.readFileSync('../ae-simple-qa.json','utf8'));
+const first=await post('/auth/v1/signup',{data:{display_name:'اختبار اسم فقط'}});assert.ok(first.access_token);stored.student={id:first.user.id,session:first};fs.writeFileSync('../ae-simple-qa.json',JSON.stringify(stored));
+const profile=await rpc('ae_set_identity',{p_name:'اختبار اسم فقط',p_avatar:'safari-driver'},first.access_token);assert.equal(profile.role,'student');assert.equal(profile.avatar_id,'safari-driver');
+await assert.rejects(rpc('ae_reports',{},first.access_token));await assert.rejects(rpc('ae_redeem_invite',{p_code:stored.invite},first.access_token));
+const cs=await rpc('ae_list_courses',{},first.access_token),id=cs.find(c=>c.status==='published').id;
+await rpc('ae_submit',{p_id:id,p_question:'s1-q1',p_choice:1},first.access_token);
+const renewed=await post('/auth/v1/token?grant_type=refresh_token',{refresh_token:first.refresh_token});stored.student.session=renewed;fs.writeFileSync('../ae-simple-qa.json',JSON.stringify(stored));
+assert.equal((await rpc('ae_progress',{p_id:id},renewed.access_token)).length,1);
+console.log('PASS: name-only student, stored avatar, server grading, refreshed session and denied teacher privileges');
+const second=await post('/auth/v1/signup',{data:{display_name:'اختبار اسم فقط'}});stored.second={id:second.user.id,session:second};fs.writeFileSync('../ae-simple-qa.json',JSON.stringify(stored));await rpc('ae_set_identity',{p_name:'اختبار اسم فقط',p_avatar:'explorer-girl'},second.access_token);assert.notEqual(second.user.id,first.user.id);assert.equal((await rpc('ae_progress',{p_id:id},second.access_token)).length,0);
+console.log('PASS: identical names on different identities never merge progress');
+const registered=await post('/functions/v1/ae-teacher-access',{action:'register',name:stored.name,password:stored.password,invite:stored.invite});stored.teacher={id:registered.session.user.id};fs.writeFileSync('../ae-simple-qa.json',JSON.stringify(stored));
+const teacher=await rpc('ae_me',{},registered.session.access_token);assert.equal(teacher.role,'teacher');assert.equal(teacher.avatar_id,'teacher');
+const login=await post('/functions/v1/ae-teacher-access',{action:'login',name:stored.name,password:stored.password});assert.equal(login.session.user.id,stored.teacher.id);
+await assert.rejects(post('/functions/v1/ae-teacher-access',{action:'login',name:stored.name,password:'wrong-password'}));
+console.log('PASS: teacher registration, username/password login, shirt character and wrong-password rejection');
