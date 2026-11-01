@@ -12,11 +12,11 @@ async function authRequest(path,body,token){
 function authMessage(message=''){if(/Invalid login/i.test(message))return 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';if(/Email not confirmed/i.test(message))return 'فعّل بريدك الإلكتروني من رسالة التأكيد أولًا.';if(/already registered/i.test(message))return 'البريد مسجّل بالفعل. استخدم تسجيل الدخول.';if(/rate limit/i.test(message))return 'طلبات كثيرة خلال وقت قصير. انتظر قليلًا ثم حاول.';return message||'تعذر إتمام تسجيل الدخول.';}
 export const cloud={
  get session(){return session;},
- async enterStudent(name,avatar){
+ async enterStudent(name,avatar,avatarChosen=false){
   const normalized=name.normalize('NFC').trim().replace(/\s+/g,' ').toLocaleLowerCase('ar');
   if(normalized.length<2||normalized.length>100)throw Error('اكتب اسمك من حرفين إلى ١٠٠ حرف.');
   const profiles=deviceStudents(),cached=Object.hasOwn(profiles,normalized)?profiles[normalized]:null;studentKey=normalized;
-  if(cached){save(cached);try{await this.token();return await this.rpc('ae_set_identity',{p_name:name,p_avatar:avatar});}catch(e){if(![400,401].includes(e.status))throw e;}}
+  if(cached){save(cached);try{await this.token();const p=await this.rpc('ae_me');return await this.rpc('ae_set_identity',{p_name:name,p_avatar:avatarChosen?avatar:p.avatar_id});}catch(e){if(![400,401].includes(e.status))throw e;}}
   const s=await authRequest('signup',{data:{display_name:name}});s.expires_at=Date.now()/1000+s.expires_in;save(s);
   return this.rpc('ae_set_identity',{p_name:name,p_avatar:avatar});
  },
