@@ -1,0 +1,15 @@
+create or replace function public.ae_bank_save(p_source uuid,p_station integer,p_question jsonb,p_active boolean default true) returns uuid language plpgsql security definer set search_path='' as $$
+declare c public.ae_courses;root uuid;result uuid;section jsonb;entry jsonb;begin
+ if public.ae_me()->>'role'<>'teacher' then raise exception 'صلاحية المعلم مطلوبة';end if;select * into c from public.ae_courses where id=p_source and(owner_id=auth.uid() or owner_id is null);if c.id is null then raise exception 'لا تملك تعديل هذا البنك';end if;
+ root:=coalesce(c.bank_source,c.id);if not exists(select 1 from public.ae_courses where id=root and(owner_id=auth.uid() or owner_id is null)) then raise exception 'لا تملك البنك المصدر';end if;
+ perform ae_private.validate_question(p_question);if p_station not between 1 and 5 or p_station is null then raise exception 'محطة غير صالحة';end if;
+ if c.document->>'format'='2' and (coalesce((p_question->>'slot')::int,0) not between 1 and case when p_station=5 then 8 else 5 end) then raise exception 'حدد هدف السؤال في البنك';end if;
+ if c.document->>'format'='2' then if p_station=5 then select value into entry from jsonb_array_elements(c.document->'final') where (value->>'slot')::int=(p_question->>'slot')::int;else select qq.value into entry from jsonb_array_elements(c.document->'stations') ss cross join lateral jsonb_array_elements(ss.value->'questions') qq where (ss.value->>'id')::int=p_station and (qq.value->>'slot')::int=(p_question->>'slot')::int;end if;if coalesce(entry->>'type','choice')<>coalesce(p_question->>'type','choice') then raise exception 'نوع السؤال يجب أن يطابق هدفه؛ انسخ سؤالًا من النوع المطلوب من البنك';end if;end if;
+ if exists(select 1 from public.ae_question_bank where source_id=root and question_id<>p_question->>'id' and question->>'prompt'=p_question->>'prompt') then raise exception 'السؤال موجود بالفعل';end if;
+ if not exists(select 1 from public.ae_question_bank where source_id=root) then
+  for section in select value from jsonb_array_elements(c.document->'stations') loop for entry in select value from jsonb_array_elements(section->'questions') loop insert into public.ae_question_bank(source_id,station,question_id,question,created_by) values(root,(section->>'id')::int,entry->>'id',entry,auth.uid()) on conflict do nothing;end loop;end loop;
+  for entry in select value from jsonb_array_elements(c.document->'final') loop insert into public.ae_question_bank(source_id,station,question_id,question,created_by) values(root,5,entry->>'id',entry,auth.uid()) on conflict do nothing;end loop;
+ end if;
+ insert into public.ae_question_bank(source_id,station,question_id,question,active,created_by) values(root,p_station,p_question->>'id',p_question,p_active,auth.uid()) on conflict(source_id,question_id) do update set station=excluded.station,question=excluded.question,active=excluded.active returning id into result;return result;
+end $$;
+revoke all on all functions in schema ae_private from public,anon,authenticated;

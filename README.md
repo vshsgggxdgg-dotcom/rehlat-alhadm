@@ -43,3 +43,14 @@ The initial course is based on the supplied lesson. The complete supplied refere
 ## Verification
 
 `tests/content.test.mjs` checks curriculum/bank coverage and invalid output. `database/verification.sql` checks real database authorization, sanitization, scoring, locking and version behavior in a rolled-back transaction. `tests/live.mjs` verifies real authentication, teacher-only bank access, generated drafts, shuffled correct answers, no repeated prompts, version variety and a complete persisted 100/100 journey. Its disposable account configuration is kept outside this repository.
+
+
+## Complete experience, format 2
+
+The complete curriculum is defined in database/complete-course.mjs and stored in ae_courses, not bundled with the student frontend. It includes 24 pages, 17 ungraded practice activities, 4 evidence reviews, 20 station assessments and 8 final assessments. public/learning.js and public/complete-runtime.js render typed activities and teacher editing without React. Geographic coastlines are attributed in public/assets/maps/SOURCES.md.
+
+V2 data is isolated in ae_v2_runs, ae_v2_events, ae_v2_answers and ae_v2_attempts; legacy ae_answers records are preserved. The server gates stamps on page, practice and quiz completion, gates the final on all evidence, and awards half marks on the second attempt (1.5 / 2.5). Every replay retains the previous round. Requests have UUID idempotency keys. Recursive document sanitization removes keys from nested practices and assessments.
+
+Additional migrations, after the existing account and cloud-generator migrations, are complete-experience.sql, complete-validation.sql, complete-bank.sql, complete-bank-types.sql and complete-report-empty.sql. They are ordered migrations, not repeatable install scripts. The legacy validator and generator remain available internally for old courses. New question bank slots preserve activity types and coverage.
+
+Run npm test for content, typed validation and escaped rendering. tests/complete-backend.sql exercises a temporary student and generated draft inside a transaction that always rolls back; its course UUID refers to this configured project. Never run it against an unrelated project without adjusting the fixture. No production student results are modified by that test.
