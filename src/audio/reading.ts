@@ -17,10 +17,11 @@ export function egyptianReading(text: string): string {
     .replace(/داخل جسم الإنسان/g,'جوه جسم الإنسان').replace(/داخل الجسم/g,'جوه الجسم')
     .replace(/يساعد على/g,'بيساعد على').replace(/تساعد على/g,'بتساعد على')
     .replace(/يساعد في/g,'بيساعد في').replace(/تساعد في/g,'بتساعد في')
-    .replace(/يُحوِّل|يحوّل/g,'بيحوّل').replace(/تُحوِّل|تحوّل/g,'بتحوّل')
+    .replace(/(?<![ء-ي])(?:يُحوِّل|يحوّل)/g,'بيحوّل').replace(/(?<![ء-ي])(?:تُحوِّل|تحوّل)/g,'بتحوّل')
     .replace(/يمكنك/g,'تقدر').replace(/انقر/g,'اضغط').replace(/اختر/g,'اختار')
     .replace(/؛/g,'،').replace(/\s+/g,' ').trim();
 }
 export function chooseArabicVoice<T extends {lang:string}>(voices: T[]): T | undefined {
   return voices.find(v=>/^ar[-_]EG$/i.test(v.lang)) ?? voices.find(v=>/^ar(?:[-_]|$)/i.test(v.lang));
 }
+
