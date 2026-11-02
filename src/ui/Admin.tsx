@@ -1,3 +1,4 @@
+import { ReadAloud } from "./ReadAloud";
 import { StudentReports } from "./StudentReports";
 import { ActivityRendererRegistry } from "../activities/ActivityRendererRegistry";
 import { applyRevealedAnswer } from "../backend/disclosure";
@@ -226,7 +227,7 @@ export function Admin({
             <p>التجربة هنا لا تُسجّل درجات أو محاولات للطلاب.</p>
             <ActivityRendererRegistry activity={applyRevealedAnswer(a, a.correctOptionId)} activityIndex={0} totalActivitiesInLevel={1} studentName="الإدارة" draftSelectedOptionId={previewDraft} previousAttempts={[]} disabled={false} onDraftOptionChange={setPreviewDraft} onSubmitAttempt={p => setPreviewMessage(p.selectedOptionId === a.correctOptionId ? "إجابة صحيحة" : "إجابة غير صحيحة — راجع الإجابة النموذجية أدناه")} />
             <p role="status">{previewMessage}</p>
-            <details><summary>عرض الإجابة والتفسير بدون حل النشاط</summary><p>{a.correctOptionId}</p><p>{a.scientificHintAr}</p><p>{a.scientificExplanationAr}</p></details>
+            <details><summary>عرض الإجابة والتفسير بدون حل النشاط</summary><p>{a.correctOptionId}</p><p>{a.scientificHintAr}</p><p>{a.scientificExplanationAr}</p><ReadAloud text={a.scientificExplanationAr} label="اسمع الشرح"/></details>
           </section>)}
           <fieldset disabled={!isDraft || busy}><legend>تعديل محتوى النشاط</legend>{(['titleAr','promptAr','scientificHintAr','scientificExplanationAr'] as const).map((field,i)=><label key={field}>{['عنوان النشاط','السؤال','التلميح','التفسير العلمي'][i]}<textarea rows={3} value={(()=>{try{return JSON.parse(editor)[field] ?? '';}catch{return '';}})()} onChange={e=>{try{setEditor(JSON.stringify({...JSON.parse(editor),[field]:e.target.value},null,2));}catch{setNotice('صحح بيانات النشاط أولاً');}}}/></label>)}</fieldset>
           <label>
