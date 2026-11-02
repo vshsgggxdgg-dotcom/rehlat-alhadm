@@ -1,3 +1,4 @@
+import { ReadAloud } from "../ui/ReadAloud";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { applyRevealedAnswer } from "../backend/disclosure";
 import {
@@ -1648,6 +1649,7 @@ export const ActivityRendererRegistry: React.FC<ActivityRendererProps> = ({
       </div>
 
       <p className="activity-card__prompt">{activity.promptAr}</p>
+      <ReadAloud text={activity.promptAr} label="اسمع السؤال"/>
 
       {/* First-error feedback:
           - One compact hint card
@@ -1669,6 +1671,7 @@ export const ActivityRendererRegistry: React.FC<ActivityRendererProps> = ({
           <p className="first-error-hint-card__body">
             {stateGatedDisclosure.revealedHintAr || activity.scientificHintAr}
           </p>
+          <ReadAloud text={stateGatedDisclosure.revealedHintAr || activity.scientificHintAr} label="اسمع التلميح"/>
         </aside>
       )}
 
@@ -1787,6 +1790,7 @@ export const ActivityRendererRegistry: React.FC<ActivityRendererProps> = ({
               {stateGatedDisclosure.revealedExplanationAr ||
                 activity.scientificExplanationAr}
             </p>
+            <ReadAloud text={stateGatedDisclosure.revealedExplanationAr || activity.scientificExplanationAr} label="اسمع الشرح"/>
           </div>
 
           {/* Reveal correct solution on 2nd incorrect attempt */}

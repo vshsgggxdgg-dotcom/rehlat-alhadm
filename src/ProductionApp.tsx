@@ -378,7 +378,7 @@ export function ProductionApp() {
         <div className="header-tools">
           {state && screen !== "admin" && <button onClick={async()=>{await cloud?.auth.signOut({scope:"local"});setState(null);setName("");go("entry");}}>تبديل الطالب</button>}
           <button
-            aria-label={settings.soundMuted ? "تشغيل الصوت" : "كتم الصوت"}
+            aria-label={settings.soundMuted ? "تشغيل المؤثرات" : "كتم المؤثرات"}
             onClick={() => {
               soundEffects.stopCurrentEffect();
               setSettings((s) => ({ ...s, soundMuted: !s.soundMuted }));

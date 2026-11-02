@@ -774,3 +774,5 @@ progress::-webkit-progress-value {
 .ordering-insertion-slot { transition:min-height .18s ease, background .18s ease; }
 .admin-preview { padding:20px; margin-block:24px; border:1px solid #ddcfc2; border-radius:20px; }
 @media(prefers-reduced-motion:reduce){ .ordering-card,.ordering-insertion-slot { transition:none; transform:none; } }
+
+.read-aloud { display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-block:.5rem 1rem; }.read-aloud__button { display:inline-flex;align-items:center;gap:.5rem;min-height:44px; }.read-aloud__button[aria-pressed="true"] { background:#672739;color:white; }
