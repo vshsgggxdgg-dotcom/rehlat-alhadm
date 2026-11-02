@@ -776,3 +776,73 @@ progress::-webkit-progress-value {
 @media(prefers-reduced-motion:reduce){ .ordering-card,.ordering-insertion-slot { transition:none; transform:none; } }
 
 .read-aloud { display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-block:.5rem 1rem; }.read-aloud__button { display:inline-flex;align-items:center;gap:.5rem;min-height:44px; }.read-aloud__button[aria-pressed="true"] { background:#672739;color:white; }
+
+/* Shared controls across learner, exploration, administration and reports. */
+:root {
+  --heading-burgundy: #6a2637;
+  --primary-brick: #7c3542;
+  --primary-brick-hover: #632636;
+  --primary-brick-active: #512030;
+  --border-color: #ddcdbf;
+  --control-radius: 14px;
+  --control-focus: #356b9a;
+}
+.journey-app .btn {
+  border: 1px solid var(--border-color);
+  background: var(--bg-elevated);
+  color: var(--heading-burgundy);
+  border-radius: var(--control-radius);
+  font-weight: 700;
+  line-height: 1.6;
+  text-decoration: none;
+  transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.journey-app .btn:hover:not(:disabled) { background: var(--selected-bg); border-color: var(--selected-border); }
+.journey-app .btn--primary, .journey-app .read-aloud__button[aria-pressed="true"] { background: var(--primary-brick); border-color: var(--primary-brick); color: var(--on-primary); }
+.journey-app .btn--primary:hover:not(:disabled) { background: var(--primary-brick-hover); }
+.journey-app .btn--danger { background: var(--incorrect-bg); color: var(--incorrect-fg); border-color: var(--incorrect-border); }
+.journey-app .btn--danger:hover:not(:disabled) { background: #f6d6d6; border-color: var(--incorrect-fg); }
+.journey-app .btn:disabled, .journey-header button:disabled { opacity: .55; cursor: not-allowed; }
+.journey-app :is(button,a,input,select,textarea,summary):focus-visible { outline: 3px solid var(--control-focus); outline-offset: 3px; }
+.journey-app :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),select,textarea) {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 16px;
+  margin-block: 6px 14px;
+  box-sizing: border-box;
+  border: 1px solid var(--border-color);
+  border-radius: var(--control-radius);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font: inherit;
+  line-height: 1.7;
+}
+.journey-app :is(input,select,textarea):disabled { opacity: .65; cursor: not-allowed; }
+.journey-app :is(input,textarea)[readonly] { background: var(--bg-subtle); }
+.journey-app :is(input[type="checkbox"],input[type="radio"],input[type="range"]) { accent-color: var(--primary-brick); }
+.journey-app input[type="file"]::file-selector-button { border: 1px solid var(--border-color); border-radius: 10px; padding: 8px 12px; margin-inline-end: 12px; background: var(--bg-subtle); color: var(--heading-burgundy); font: inherit; cursor: pointer; }
+.journey-app details { border: 1px solid var(--border-color); border-radius: var(--control-radius); padding: 12px 16px; margin-block: 14px; background: var(--bg-elevated); }
+.journey-app summary { min-height: 32px; padding-block: 6px; cursor: pointer; color: var(--heading-burgundy); font-weight: 700; }
+.journey-app label, .journey-app legend { color: var(--text-primary); font-weight: 600; }
+.admin-panel { max-width: 1120px; }
+.admin-panel fieldset { border: 1px solid var(--border-color); border-radius: 18px; padding: 18px; margin-block: 20px; }
+.admin-panel fieldset textarea { font-family: var(--font-sans); font-size: 1rem; }
+.journey-header h1 { font-size: clamp(20px, 2.3vw, 28px); margin: 0; color: var(--heading-burgundy); }
+.journey-header .button-row { margin: 0; gap: 8px; }
+.student-reports { border-block: 1px solid var(--border-color); margin-block: 24px; padding-block: 24px; }
+.student-reports > .button-row { align-items: end; justify-content: start; }
+.student-reports > .button-row > label { flex: 1 1 180px; margin: 0; }
+.student-reports table { width: 100%; border-collapse: collapse; font-size: .95rem; margin-block: 16px; }
+.student-reports th, .student-reports td { padding: 12px; text-align: start; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+.student-reports th { background: var(--heading-burgundy); color: var(--on-primary); }
+.student-reports tbody tr:nth-child(even) { background: var(--bg-subtle); }
+.student-reports td .btn { margin: 3px; }
+.student-reports article { border: 1px solid var(--border-color); border-radius: 18px; padding: 16px; margin-block: 14px; background: var(--bg-elevated); }
+.confirm-dialog { width: min(550px,100%); max-height: 85vh; overflow-y: auto; box-sizing: border-box; border: 1px solid var(--border-color); box-shadow: 0 20px 70px #42131c30; }
+@media(max-width:600px) { .student-reports th,.student-reports td { padding: 8px; } .journey-header .button-row { width: 100%; } .journey-header .button-row .btn { flex: 1 1 140px; } }
+@media(prefers-reduced-motion:reduce) { .journey-app .btn { transition: none; } }
+
+
+.journey-app { padding-bottom: 90px; }.page-reader { position:fixed;inset-inline-end:16px;bottom:16px;z-index:100;max-width:min(360px,calc(100vw - 32px));padding:8px 12px;border:1px solid var(--border-color);border-radius:18px;background:var(--bg-elevated);box-shadow:0 8px 30px #42131c20; }.page-reader .read-aloud { margin:0; }.read-aloud small { display:block;line-height:1.8;color:var(--incorrect-fg);max-width:42ch; }
+.admin-panel--login { max-width:600px;padding:28px;border:1px solid var(--border-color);border-radius:24px;background:var(--bg-elevated);box-shadow:0 15px 55px #76523908; }

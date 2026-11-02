@@ -1,3 +1,5 @@
+import { PageReader } from "./ui/PageReader";
+import { CLASSROOM_OPTIONS } from "./content/classrooms";
 import { AdminExplorer } from "./ui/AdminExplorer";
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -448,7 +450,7 @@ export function ProductionApp() {
                     maxLength={60}
                     placeholder="اسمك الثلاثي على الأقل"
                   />
-                  <label htmlFor="student-class">الفصل</label><select id="student-class" value={className} onChange={e=>setClassName(e.target.value)}>{Array.from({length:20},(_,i)=><option key={i} value={`6/${i+1}`}>سادسة / {i+1}</option>)}</select>
+                  <label htmlFor="student-class">الفصل</label><select id="student-class" value={className} onChange={e=>setClassName(e.target.value)}>{CLASSROOM_OPTIONS.map(c=><option key={c.value} value={c.value}>{c.label}</option>)}</select>
                   <fieldset>
                     <legend>اختار صاحبك في الرحلة</legend>
                     <div className="avatar-grid">
@@ -915,6 +917,7 @@ export function ProductionApp() {
           </>
         )}
       </main>
+      <PageReader scope={`${screen}:${li}:${ai}`}/>
       <footer className="journey-footer">
         <span>رحلة الهضم · فضولك بداية المعرفة</span>
         <button onClick={() => go("about")}>عن المشروع</button>

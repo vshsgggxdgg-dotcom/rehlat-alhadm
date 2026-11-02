@@ -109,7 +109,7 @@ export function Admin({
   const isDraft =
     versions.find((v) => v.content_version_id === version)?.status === "draft";
   return (
-    <section className="admin-panel settings-card">
+    <section className={`admin-panel settings-card ${allowed ? "" : "admin-panel--login"}`}>
       <h1>إدارة رحلة الهضم</h1>
       <p>حساب المسؤول مستقل. تُفرض صلاحية الإدارة على الخادم.</p>
       {notice && <p role="status">{notice}</p>}
@@ -304,5 +304,6 @@ export function Admin({
     </section>
   );
 }
+
 
 

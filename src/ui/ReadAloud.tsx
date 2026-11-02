@@ -1,30 +1,43 @@
 import { useEffect, useRef, useState } from 'react';
 import { Volume2, Square } from 'lucide-react';
-import { chooseArabicVoice, egyptianReading } from '../audio/reading';
+import { chooseArabicVoice } from '../audio/reading';
 let stopCurrent: (()=>void) | null = null;
-export function ReadAloud({text,label}:{text:string;label:string}) {
- const [playing,setPlaying]=useState(false),[error,setError]=useState('');
- const ownStop=useRef<(()=>void)|null>(null);
- useEffect(()=>()=>{ownStop.current?.();},[text]);
+export function stopReading(){stopCurrent?.();}
+export function ReadAloud({text='',label,getText,scopeKey}:{text?:string;label:string;getText?:()=>string;scopeKey?:string}) {
+ const [status,setStatus]=useState<'idle'|'loading'|'speaking'>('idle'),[error,setError]=useState('');
+ const ownStop=useRef<(()=>void)|null>(null), utteranceRef=useRef<SpeechSynthesisUtterance|null>(null);
+ useEffect(()=>{if('speechSynthesis' in window)window.speechSynthesis.getVoices();},[]);
+ useEffect(()=>{setError('');return()=>{ownStop.current?.();};},[text,scopeKey]);
  function toggle(){
-  if(playing){ownStop.current?.();return;}
-  if(!('speechSynthesis' in window)||!('SpeechSynthesisUtterance' in window)){setError('القراءة الصوتية غير متاحة في المتصفح ده. جرّب Chrome أو Edge.');return;}
-  stopCurrent?.();
-  const synth=window.speechSynthesis,voice=chooseArabicVoice(synth.getVoices());
-  let live=true;const stop=()=>{live=false;synth.cancel();setPlaying(false);if(stopCurrent===stop)stopCurrent=null;};
-  ownStop.current=stop;stopCurrent=stop;setError('');setPlaying(true);synth.cancel();
-  const chunks=egyptianReading(text).match(/.{1,160}(?:\s|$)|\S+/g) ?? [];
-  let index=0;
-  const next=()=>{
+  if(status!=='idle'){ownStop.current?.();return;}
+  const content=(getText?.() ?? text).replace(/\s+/g,' ').trim();
+  if(!content){setError('لا يوجد نص ظاهر للقراءة.');return;}
+  if(!('speechSynthesis' in window)||!('SpeechSynthesisUtterance' in window)){setError('القراءة الصوتية غير متاحة في المتصفح ده. استخدم Chrome أو Edge.');return;}
+  stopCurrent?.();const synth=window.speechSynthesis;
+  let live=true,watchdog:ReturnType<typeof setTimeout>|undefined,voice:SpeechSynthesisVoice|undefined;
+  const stop=()=>{if(!live)return;live=false;clearTimeout(watchdog);synth.removeEventListener?.('voiceschanged',begin);synth.cancel();utteranceRef.current=null;ownStop.current=null;setStatus('idle');if(stopCurrent===stop)stopCurrent=null;};
+  const fail=(message:string)=>{stop();setError(message);};
+  ownStop.current=stop;stopCurrent=stop;setError('');setStatus('loading');synth.cancel();synth.resume?.();
+  const chunks=content.match(/.{1,160}(?:\s|$)|\S+/g) ?? [];let index=0;
+  function next(){
    if(!live)return;
-   if(index>=chunks.length){setPlaying(false);if(stopCurrent===stop)stopCurrent=null;return;}
-   const utterance=new SpeechSynthesisUtterance(chunks[index++]);
-   utterance.lang=voice?.lang ?? 'ar-EG';if(voice)utterance.voice=voice;utterance.rate=.88;utterance.volume=1;
-   utterance.onend=next;utterance.onerror=e=>{if(!live)return;stop();if(e.error!=='canceled'&&e.error!=='interrupted')setError('تعذّر تشغيل الصوت. تأكد إن جهازك فيه صوت عربي وجرّب تاني.');};
-   synth.speak(utterance);
-  };
-  next();
+   if(index>=chunks.length){live=false;setStatus('idle');ownStop.current=null;utteranceRef.current=null;if(stopCurrent===stop)stopCurrent=null;return;}
+   const utterance=new SpeechSynthesisUtterance(chunks[index++]);utteranceRef.current=utterance;
+   utterance.lang=voice!.lang;utterance.voice=voice!;utterance.rate=.92;utterance.volume=1;
+   watchdog=setTimeout(()=>{if(live)fail('المتصفح لم يبدأ الصوت. تأكد من مستوى الصوت وأعد فتح Chrome بعد إضافة الصوت العربي.');},8000);
+   utterance.onstart=()=>{if(live){clearTimeout(watchdog);setStatus('speaking');}};
+   utterance.onend=()=>{clearTimeout(watchdog);utteranceRef.current=null;next();};
+   utterance.onerror=e=>{if(!live)return;fail(e.error==='language-unavailable'||e.error==='voice-unavailable'?'الصوت العربي غير متاح. أضف صوت العربية من إعدادات الكلام في Windows ثم أعد فتح Chrome.':'تعذّر تشغيل الصوت. تأكد من مستوى الصوت وأعد المحاولة.');};
+   try{synth.resume?.();synth.speak(utterance);}catch{fail('تعذّر بدء القراءة في المتصفح. أعد المحاولة.');}
+  }
+  function begin(){
+   if(!live)return;const voices=synth.getVoices();voice=chooseArabicVoice(voices);
+   if(!voice){if(voices.length)fail('مفيش صوت عربي متاح في المتصفح. في Windows: الإعدادات ← الوقت واللغة ← الكلام ← إدارة الأصوات ← إضافة أصوات ← العربية، وبعدها أعد فتح Chrome.');return;}
+   clearTimeout(watchdog);synth.removeEventListener?.('voiceschanged',begin);next();
+  }
+  watchdog=setTimeout(()=>{if(live)fail('لم يتم تحميل صوت عربي. أضف صوت العربية في إعدادات الكلام ثم أعد فتح Chrome.');},8000);
+  synth.addEventListener?.('voiceschanged',begin);begin();
  }
- if(!text.trim())return null;
- return <div className="read-aloud"><button type="button" className="btn read-aloud__button" aria-label={playing?`إيقاف ${label}`:label} aria-pressed={playing} onClick={toggle}>{playing?<Square size={17} aria-hidden="true"/>:<Volume2 size={18} aria-hidden="true"/>}{playing?'إيقاف القراءة':label}</button>{error&&<small role="status">{error}</small>}</div>;
+ if(!getText&&!text.trim())return null;
+ return <div className="read-aloud"><button type="button" className="btn read-aloud__button" aria-label={status!=='idle'?`إيقاف ${label}`:label} aria-pressed={status!=='idle'} aria-busy={status==='loading'} onClick={toggle}>{status!=='idle'?<Square size={17} aria-hidden="true"/>:<Volume2 size={18} aria-hidden="true"/>}{status==='speaking'?'إيقاف القراءة':status==='loading'?'جارٍ تشغيل الصوت…':label}</button>{error&&<small role="status">{error}</small>}</div>;
 }
