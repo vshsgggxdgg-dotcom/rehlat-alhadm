@@ -3,7 +3,7 @@ import { Volume2, Square } from 'lucide-react';
 import { chooseArabicVoice, arabicVoiceHelp } from '../audio/reading';
 let stopCurrent: (()=>void) | null = null;
 export function stopReading(){stopCurrent?.();}
-export function ReadAloud({text='',label,getText,scopeKey}:{text?:string;label:string;getText?:()=>string;scopeKey?:string}) {
+export function ReadAloud({text='',label,getText,scopeKey,autoPlay=false}:{text?:string;label:string;getText?:()=>string;scopeKey?:string;autoPlay?:boolean}) {
  const [status,setStatus]=useState<'idle'|'loading'|'speaking'>('idle'),[error,setError]=useState('');
  const ownStop=useRef<(()=>void)|null>(null), utteranceRef=useRef<SpeechSynthesisUtterance|null>(null);
  useEffect(()=>{if('speechSynthesis' in window)window.speechSynthesis.getVoices();},[]);
@@ -39,6 +39,7 @@ export function ReadAloud({text='',label,getText,scopeKey}:{text?:string;label:s
   }
   begin();
  }
+ useEffect(()=>{if(autoPlay && text.trim())toggle();},[autoPlay,text]);
  if(!getText&&!text.trim())return null;
  return <div className="read-aloud"><button type="button" className="btn read-aloud__button" aria-label={status!=='idle'?`إيقاف ${label}`:label} aria-pressed={status!=='idle'} aria-busy={status==='loading'} onClick={toggle}>{status!=='idle'?<Square size={17} aria-hidden="true"/>:<Volume2 size={18} aria-hidden="true"/>}{status==='speaking'?'إيقاف القراءة':status==='loading'?'جارٍ تشغيل الصوت…':label}</button>{error&&<small role="status">{error}</small>}</div>;
 }

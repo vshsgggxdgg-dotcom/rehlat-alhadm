@@ -1,3 +1,4 @@
+import { stationName, medalName } from "./content/journeyNames";
 import { PageReader } from "./ui/PageReader";
 import { CLASSROOM_OPTIONS } from "./content/classrooms";
 import { AdminExplorer } from "./ui/AdminExplorer";
@@ -527,7 +528,7 @@ export function ProductionApp() {
                         key={l.levelId}
                       >
                         <div className="level-card-top">
-                          <span>المستوى {fmt(i + 1)}</span>
+                          <span>{medalName(l.order)}</span>
                           {p.isCompleted ? (
                             <Check aria-label="مكتمل" />
                           ) : !p.isUnlocked ? (
@@ -542,10 +543,10 @@ export function ProductionApp() {
                           />
                         </div>
                         <h2>
-                          {l.stationNameAr.replace(/^المستوى[^:]+:\s*/, "")}
+                          {stationName(l.order)}
                         </h2>
                         <p>
-                          {fmt(l.activities.length)} تحديات ·{" "}
+                          {l.organNameAr} · {fmt(l.activities.length)} تحديات ·{" "}
                           {fmt(p.maxPossibleScore)} نقطة
                         </p>
                         <button
@@ -575,7 +576,7 @@ export function ProductionApp() {
                   <span>
                     {practice
                       ? "تدريب دون تغيير النتيجة"
-                      : `المستوى ${fmt(li + 1)}`}
+                      : stationName(level.order)}
                   </span>
                   <span>
                     التحدي {fmt(ai + 1)} من {fmt(level.activities.length)}
@@ -641,10 +642,10 @@ export function ProductionApp() {
                   earned={!!summary?.isCompleted}
                   size={140}
                 />
-                <span className="eyebrow">كل خطوة تستاهل فرحة</span>
+                <span className="eyebrow">{summary?.isCompleted ? `حصلت على ${medalName(level.order)}` : "كل خطوة تستاهل فرحة"}</span>
                 <h1>برافو يا {state?.student.displayName}!</h1>
                 <h2>
-                  {practice ? "التدريب بيقوّي معرفتك" : level.stationNameAr}
+                  {practice ? "التدريب بيقوّي معرفتك" : stationName(level.order)}
                 </h2>
                 <p>
                   {practice
@@ -657,7 +658,7 @@ export function ProductionApp() {
                       className="btn btn--primary"
                       onClick={() => open(li + 1)}
                     >
-                      المستوى التالي
+                      المغامرة التالية
                       <ArrowLeft size={18} />
                     </button>
                   )}
@@ -711,7 +712,7 @@ export function ProductionApp() {
                         order={l.order}
                         earned={progress.get(l.levelId)?.isCompleted ?? false}
                       />
-                      <small>المستوى {fmt(l.order)}</small>
+                      <small>{medalName(l.order)}</small>
                     </div>
                   ))}
                 </div>

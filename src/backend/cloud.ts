@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { stationName, medalName } from "../content/journeyNames";
 import { DIGESTION_CURRICULUM_MANIFEST as base } from "../content/digestionManifest";
 import type {
   CurriculumManifest,
@@ -95,9 +96,9 @@ export async function loadManifest(
   const levels = (lr.data ?? []).map((l) => ({
     ...base.levels.find((b) => b.order === l.level_order)!,
     levelId: asLevelId(l.level_id),
-    stationNameAr: l.station_name_ar,
+    stationNameAr: stationName(l.level_order),
     subtitleAr: l.subtitle_ar,
-    badge: l.badge_json,
+    badge: { ...l.badge_json, titleAr: medalName(l.level_order) },
     learningObjectivesAr: l.learning_objectives_json,
     coreScientificFactsAr: l.core_facts_json,
     keyConcepts: l.key_concepts_json,

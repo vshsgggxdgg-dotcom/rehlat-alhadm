@@ -27,6 +27,7 @@ export function Admin({
   onPublished: () => Promise<void>;
   onExplore: () => void;
 }) {
+  const [tab,setTab] = useState<"reports"|"content"|"preview">("reports");
   const [previewDraft, setPreviewDraft] = useState("");
   const [previewMessage, setPreviewMessage] = useState("");
   const [allowed, setAllowed] = useState(false),
@@ -111,7 +112,7 @@ export function Admin({
   return (
     <section className={`admin-panel settings-card ${allowed ? "" : "admin-panel--login"}`}>
       <h1>إدارة رحلة الهضم</h1>
-      <p>حساب المسؤول مستقل. تُفرض صلاحية الإدارة على الخادم.</p>
+      <p>{allowed ? "مساحة واحدة لمتابعة الطلاب وإدارة المحتوى وتجربة كل الأنشطة." : "ادخل بحساب المسؤول للوصول إلى لوحة التحكم."}</p>
       {notice && <p role="status">{notice}</p>}
       {!allowed ? (
         <form
@@ -155,6 +156,7 @@ export function Admin({
         </form>
       ) : (
         <>
+          <div className="button-row admin-top-actions">
           <button
             className="btn"
             onClick={() =>
@@ -168,7 +170,10 @@ export function Admin({
             تسجيل الخروج
           </button>
           <button className="btn btn--primary" onClick={onExplore}>افتح الموقع بكل المستويات والأسئلة</button>
-          <StudentReports />
+          </div>
+          <nav className="admin-tabs" aria-label="أقسام لوحة المسؤول">{([['reports','الطلاب والتقارير'],['content','إدارة المحتوى'],['preview','معاينة الأنشطة']] as const).map(([id,label])=><button type="button" key={id} className={`btn ${tab===id?'btn--primary':''}`} aria-pressed={tab===id} onClick={()=>setTab(id)}>{label}</button>)}</nav>
+          {tab === "reports" && <StudentReports />}
+          {tab !== "reports" && <section className="admin-workspace"><div className="admin-section-heading"><span className="eyebrow">{tab === "content" ? "المحتوى التعليمي" : "مساحة التجربة"}</span><h2>{tab === "content" ? "جهّز المسودة، عدّل، ثم انشر" : "اختبر أي نشاط بحرية"}</h2><p>{tab === "content" ? "المحتوى المنشور محفوظ. أنشئ مسودة لتعديل الأسئلة والتلميحات ثم افحصها وانشرها." : "كل الأنشطة مفتوحة هنا؛ التجربة لا تؤثر على درجات الطلاب."}</p></div>
           <label>
             نسخة المحتوى
             <select
@@ -182,7 +187,7 @@ export function Admin({
               ))}
             </select>
           </label>
-          <form
+          {tab === "content" && <form
             onSubmit={(e) => {
               e.preventDefault();
               void action(async () => {
@@ -208,7 +213,7 @@ export function Admin({
             <button className="btn" disabled={busy}>
               إنشاء مسودة من هذه النسخة
             </button>
-          </form>
+          </form>}
           <label>
             النشاط
             <select
@@ -222,15 +227,15 @@ export function Admin({
               ))}
             </select>
           </label>
-          {activities.filter(a => a.activityId === selected).map(a => <section key={a.activityId} className="admin-preview">
+          {tab === "preview" && activities.filter(a => a.activityId === selected).map(a => <section key={a.activityId} className="admin-preview">
             <h2>معاينة النشاط — كل الأنشطة مفتوحة للإدارة</h2>
             <p>التجربة هنا لا تُسجّل درجات أو محاولات للطلاب.</p>
             <ActivityRendererRegistry activity={applyRevealedAnswer(a, a.correctOptionId)} activityIndex={0} totalActivitiesInLevel={1} studentName="الإدارة" draftSelectedOptionId={previewDraft} previousAttempts={[]} disabled={false} onDraftOptionChange={setPreviewDraft} onSubmitAttempt={p => setPreviewMessage(p.selectedOptionId === a.correctOptionId ? "إجابة صحيحة" : "إجابة غير صحيحة — راجع الإجابة النموذجية أدناه")} />
             <p role="status">{previewMessage}</p>
             <details><summary>عرض الإجابة والتفسير بدون حل النشاط</summary><p>{a.correctOptionId}</p><p>{a.scientificHintAr}</p><p>{a.scientificExplanationAr}</p><ReadAloud text={a.scientificExplanationAr} label="اسمع الشرح"/></details>
           </section>)}
-          <fieldset disabled={!isDraft || busy}><legend>تعديل محتوى النشاط</legend>{(['titleAr','promptAr','scientificHintAr','scientificExplanationAr'] as const).map((field,i)=><label key={field}>{['عنوان النشاط','السؤال','التلميح','التفسير العلمي'][i]}<textarea rows={3} value={(()=>{try{return JSON.parse(editor)[field] ?? '';}catch{return '';}})()} onChange={e=>{try{setEditor(JSON.stringify({...JSON.parse(editor),[field]:e.target.value},null,2));}catch{setNotice('صحح بيانات النشاط أولاً');}}}/></label>)}</fieldset>
-          <label>
+          {tab === "content" && <><fieldset disabled={!isDraft || busy}><legend>تعديل محتوى النشاط</legend>{(['titleAr','promptAr','scientificHintAr','scientificExplanationAr'] as const).map((field,i)=><label key={field}>{['عنوان النشاط','السؤال','التلميح','التفسير العلمي'][i]}<textarea rows={3} value={(()=>{try{return JSON.parse(editor)[field] ?? '';}catch{return '';}})()} onChange={e=>{try{setEditor(JSON.stringify({...JSON.parse(editor),[field]:e.target.value},null,2));}catch{setNotice('صحح بيانات النشاط أولاً');}}}/></label>)}</fieldset>
+          <details className="advanced-editor"><summary>إعدادات النشاط المتقدمة (JSON)</summary><label>
             بيانات النشاط المعتمد
             <textarea
               rows={22}
@@ -240,7 +245,7 @@ export function Admin({
               onChange={(e) => setEditor(e.target.value)}
             />
           </label>
-          <div className="button-row">
+          </details><div className="button-row">
             <button
               className="btn"
               disabled={!isDraft || busy}
@@ -298,7 +303,8 @@ export function Admin({
                 });
               }}
             />
-          </label>
+          </label></>}
+          </section>}
         </>
       )}
     </section>
