@@ -846,3 +846,36 @@ progress::-webkit-progress-value {
 
 .journey-app { padding-bottom: 90px; }.page-reader { position:fixed;inset-inline-end:16px;bottom:16px;z-index:100;max-width:min(360px,calc(100vw - 32px));padding:8px 12px;border:1px solid var(--border-color);border-radius:18px;background:var(--bg-elevated);box-shadow:0 8px 30px #42131c20; }.page-reader .read-aloud { margin:0; }.read-aloud small { display:block;line-height:1.8;color:var(--incorrect-fg);max-width:42ch; }
 .admin-panel--login { max-width:600px;padding:28px;border:1px solid var(--border-color);border-radius:24px;background:var(--bg-elevated);box-shadow:0 15px 55px #76523908; }
+
+/* Shared challenge controls and the administrator workspace. */
+.challenge-status { display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:14px 18px;margin-block:16px;border:1px solid var(--border-color);border-radius:18px;background:var(--bg-subtle); }
+.chance-counter { display:flex;align-items:center;gap:12px;color:var(--heading-burgundy); }
+.chance-counter__dots { display:flex;gap:6px;font-size:26px;color:#c9c1b8; }
+.chance-counter__dots .is-available { color:#92611d;text-shadow:0 2px 10px #d9a64a33; }
+.challenge-clock { display:grid;grid-template-columns:auto auto;gap:2px 12px;align-items:center; }
+.challenge-clock b { font-size:1.3rem;font-variant-numeric:tabular-nums;color:var(--heading-burgundy); }
+.challenge-clock small { grid-column:1/-1;color:var(--text-secondary); }
+.admin-tabs { display:flex;flex-wrap:wrap;gap:10px;padding:12px;background:var(--bg-subtle);border:1px solid var(--border-color);border-radius:20px;margin-block:24px; }
+.admin-tabs .btn { flex:1 1 160px; }
+.admin-workspace { background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:24px;padding:24px; }
+.admin-section-heading { border-bottom:1px solid var(--border-color);padding-bottom:16px;margin-bottom:24px; }
+.admin-section-heading h2 { margin:8px 0; }
+.admin-metrics { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-block:24px; }
+.admin-metrics article { margin:0;padding:20px;border:1px solid var(--border-color);border-radius:20px;background:var(--bg-elevated);display:flex;flex-direction:column;gap:6px; }
+.admin-metrics strong { font-size:2rem;color:var(--heading-burgundy);font-variant-numeric:tabular-nums; }
+.admin-metrics span { color:var(--text-secondary); }
+.admin-table-scroll { width:100%;max-width:100%;overflow:auto;border:1px solid var(--border-color);border-radius:18px;margin-block:18px; }
+.student-reports .admin-table-scroll table { margin:0;min-width:780px; }
+.admin-table-scroll caption { padding:14px 16px;text-align:start;font-weight:700;background:var(--bg-elevated);color:var(--heading-burgundy); }
+.student-reports .admin-table-scroll th { white-space:nowrap; }
+.student-reports tbody tr:hover { background:var(--selected-bg); }
+.report-pagination { display:flex;align-items:center;justify-content:center;gap:16px;margin-block:18px; }
+.report-result { display:inline-block;padding:4px 10px;border-radius:100px;background:var(--incorrect-bg);color:var(--incorrect-fg);white-space:nowrap; }
+.report-result.is-correct { background:var(--correct-bg);color:var(--correct-fg); }
+.student-reports > section { padding:20px;border:1px solid var(--border-color);border-radius:20px;background:var(--bg-elevated);margin-block:24px; }
+.student-reports > section form { display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:end; }
+.student-reports > section form .btn { grid-column:1/-1;justify-self:start; }
+.admin-panel .admin-preview { margin-block:20px; }
+.admin-panel .advanced-editor textarea { font:14px/1.8 monospace;min-height:340px; }
+.badge-row small { display:block;max-width:150px;text-align:center;line-height:1.8; }
+@media(max-width:700px) { .admin-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }.admin-workspace { padding:16px; }.student-reports > section form { grid-template-columns:1fr; }.admin-panel { min-width:0;width:100%;box-sizing:border-box; }.challenge-status { padding:12px;gap:10px; } }

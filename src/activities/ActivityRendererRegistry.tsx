@@ -1,3 +1,4 @@
+import { ChallengeStatus } from "../ui/ChallengeStatus";
 import { ReadAloud } from "../ui/ReadAloud";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { applyRevealedAnswer } from "../backend/disclosure";
@@ -1648,6 +1649,7 @@ export const ActivityRendererRegistry: React.FC<ActivityRendererProps> = ({
         </div>
       </div>
 
+      <ChallengeStatus used={attemptsUsed} finished={isFinished} paused={disabled || isSubmittingTransient} activityId={activity.activityId}/>
       <p className="activity-card__prompt">{activity.promptAr}</p>
       <ReadAloud text={activity.promptAr} label="اسمع السؤال"/>
 
@@ -1671,7 +1673,7 @@ export const ActivityRendererRegistry: React.FC<ActivityRendererProps> = ({
           <p className="first-error-hint-card__body">
             {stateGatedDisclosure.revealedHintAr || activity.scientificHintAr}
           </p>
-          <ReadAloud text={stateGatedDisclosure.revealedHintAr || activity.scientificHintAr} label="اسمع التلميح"/>
+          <ReadAloud autoPlay text={`لسه عندك فرصة تانية. ${stateGatedDisclosure.revealedHintAr || activity.scientificHintAr}`} label="اسمع التلميح"/>
         </aside>
       )}
 
@@ -1790,7 +1792,7 @@ export const ActivityRendererRegistry: React.FC<ActivityRendererProps> = ({
               {stateGatedDisclosure.revealedExplanationAr ||
                 activity.scientificExplanationAr}
             </p>
-            <ReadAloud text={stateGatedDisclosure.revealedExplanationAr || activity.scientificExplanationAr} label="اسمع الشرح"/>
+            <ReadAloud autoPlay text={`${machine.isMastered ? encouragementHeading : "انتهت الفرصتان. نتعلم من الحل الصحيح."} حصلت على ${machine.earnedScore} من ${activity.maxScore} نقاط. ${stateGatedDisclosure.revealedExplanationAr || activity.scientificExplanationAr}`} label="اسمع النتيجة والشرح"/>
           </div>
 
           {/* Reveal correct solution on 2nd incorrect attempt */}
