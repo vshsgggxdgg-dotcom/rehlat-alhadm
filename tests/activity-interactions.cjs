@@ -16,6 +16,27 @@ test('touch drag reorders a card at the visible insertion target',()=>{let draft
 test('touch word drop updates blank without submitting an attempt',()=>{let draft,count=0;const a=all.find(a=>a.type==='fill_in');const ui=render(React.createElement(ActivityRendererRegistry,props(a,{onDraftOptionChange:v=>{draft=v;},onSubmitAttempt:()=>count++})));const word=ui.container.querySelector('.word-card-chip'),blank=ui.container.querySelector('.fill-in-blank-slot');dom.window.document.elementFromPoint=()=>blank;fireEvent.pointerDown(word,{pointerType:'touch',clientX:5,clientY:5,pointerId:1});fireEvent.pointerMove(word,{pointerType:'touch',clientX:50,clientY:60,pointerId:1});fireEvent.pointerUp(word,{pointerType:'touch',clientX:50,clientY:60,pointerId:1});assert.equal(draft,`${a.fillInConfig.blanks[0].blankId}:${a.fillInConfig.wordCards[0].wordId}`);assert.equal(count,0);});
 
 test('anatomy selection reveals organ name without letter badges',()=>{const a=all.find(a=>a.imageIdentificationConfig?.mode==='hotspot_select');let draft='';const make=()=>React.createElement(ActivityRendererRegistry,props(a,{draftSelectedOptionId:draft,onDraftOptionChange:v=>{draft=v;}}));const ui=render(make());const target=ui.container.querySelector('.anatomy-hotspot--organ');assert.ok(target);assert.equal(ui.container.querySelectorAll('.anatomy-hotspot--badge').length,0);assert.equal(target.textContent.trim(),'');fireEvent.click(target);ui.rerender(make());assert.ok(ui.container.querySelector('.anatomy-hotspot--selected').textContent.trim().length>1);});
+
+test('label placement keeps compact location markers and full selected names separate',()=>{
+ const a=all.find(a=>a.imageIdentificationConfig?.mode==='label_placement');let draft='';
+ const make=()=>React.createElement(ActivityRendererRegistry,props(a,{draftSelectedOptionId:draft,onDraftOptionChange:v=>{draft=v;}}));
+ const ui=render(make());
+ for(const marker of ui.container.querySelectorAll('.anatomy-drop-pin__letter')) assert.equal(marker.textContent.length,1);
+ const first=a.imageIdentificationConfig.labelsToPlace[0];
+ fireEvent.click(ui.getByRole('button',{name:first.labelAr,exact:true}));
+ ui.rerender(make());fireEvent.click(ui.container.querySelector('.anatomy-drop-pin'));ui.rerender(make());
+ assert.ok(ui.getByRole('group',{name:'المسميات الموضوعة على الرسم'}).textContent.includes(first.labelAr));
+ assert.ok(draft.includes(first.labelId));
+});
+
+test('six achievement medals use different image assets and meaningful names',()=>{
+ const {LevelBadgeIllustration}=load('src/ui/illustrations/TransparentIllustrations.tsx');
+ const ui=render(React.createElement('div',{},...Array.from({length:6},(_,i)=>React.createElement(LevelBadgeIllustration,{key:i,order:i+1,earned:true}))));
+ const sources=[...ui.container.querySelectorAll('img')].map(e=>e.getAttribute('src'));
+ assert.equal(new Set(sources).size,6);
+ for(const source of sources)assert.ok(fs.existsSync(path.join('public',source)));
+ assert.ok(ui.getByRole('img',{name:'وسام المستكشف الصغير — مكتسب'}));
+});
 test('all 26 activity renderers open independently in admin preview',()=>{for(const a of all){const ui=render(React.createElement(ActivityRendererRegistry,props(a)));assert.ok(ui.container.querySelector('form'),a.activityId);ui.unmount();}});
 
 test('administrator opens final level and skips questions without student identity or submissions',async()=>{const {AdminExplorer}=load('src/ui/AdminExplorer.tsx');const ui=render(React.createElement(AdminExplorer,{onManage:()=>{},onExit:()=>{}}));await waitFor(()=>assert.ok(ui.getByRole('button',{name:'افتح المستوى 6'})));fireEvent.click(ui.getByRole('button',{name:'افتح المستوى 6'}));assert.ok(ui.getByRole('heading',{name:m.levels[5].activities[0].titleAr}));fireEvent.click(ui.getByRole('button',{name:'السؤال التالي بدون إجابة'}));assert.ok(ui.getByRole('heading',{name:m.levels[5].activities[1].titleAr}));fireEvent.change(ui.getByLabelText('انتقل لأي سؤال'),{target:{value:'3'}});assert.ok(ui.getByRole('heading',{name:m.levels[5].activities[3].titleAr}));});

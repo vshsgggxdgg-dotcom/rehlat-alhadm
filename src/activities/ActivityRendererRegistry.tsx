@@ -1210,6 +1210,7 @@ export const ActivityRendererRegistry: React.FC<ActivityRendererProps> = ({
             </div>
           </div>
 
+          {selectedZoneId && <p className="anatomy-mobile-selection" role="status">الجزء المختار: {asset.hotspots.find(hs => hs.zoneId === selectedZoneId)?.postConfirmationOrganNameAr}</p>}
           {/* Non-spoiler Accessible Keyboard/Touch Alternative */}
           <div
             className="anatomy-accessible-controls"
@@ -1380,7 +1381,7 @@ export const ActivityRendererRegistry: React.FC<ActivityRendererProps> = ({
                   }`}
                 >
                   <span className="anatomy-drop-pin__letter">
-                    {hs.preConfirmationPositionLabelAr}
+                    {hs.calloutLetterAr}
                   </span>
                   <span className="anatomy-drop-pin__value">
                     {assignedLabel ? assignedLabel.labelAr : "ضع المسمّى هنا"}
@@ -1389,6 +1390,12 @@ export const ActivityRendererRegistry: React.FC<ActivityRendererProps> = ({
               );
             })}
           </div>
+        </div>
+        <div className="anatomy-mobile-assignments" role="group" aria-label="المسميات الموضوعة على الرسم">
+          {asset.hotspots.map(hs => {
+            const assigned = labels.find(label => label.labelId === zoneToLabelMap[hs.zoneId]);
+            return <div key={hs.zoneId}><span className="anatomy-assignment-marker">{hs.calloutLetterAr}</span><span>{assigned?.labelAr ?? 'لم يوضع مسمّى بعد'}</span></div>;
+          })}
         </div>
       </div>
     );

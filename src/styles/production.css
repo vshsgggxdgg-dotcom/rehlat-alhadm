@@ -878,4 +878,40 @@ progress::-webkit-progress-value {
 .admin-panel .admin-preview { margin-block:20px; }
 .admin-panel .advanced-editor textarea { font:14px/1.8 monospace;min-height:340px; }
 .badge-row small { display:block;max-width:150px;text-align:center;line-height:1.8; }
+.anatomy-mobile-assignments,.anatomy-mobile-selection { display:none; }
+@media(max-width:600px) {
+  .journey-main { padding-inline:12px; }
+  .focused-activity .activity-card { padding:18px 12px; }
+  .activity-card__header { align-items:flex-start; }
+  .activity-card__title-group,.activity-card__status-badges { max-width:100%; }
+  .activity-card__prompt { font-size:1.1rem;line-height:1.95; }
+  .renderer-helper-label { align-items:flex-start;font-size:.85rem;line-height:1.9; }
+  .renderer-helper-label svg,.read-aloud svg,.word-card-chip svg { flex-shrink:0; }
+  .anatomy-label-bank,.fill-in-word-bank__grid { display:grid;grid-template-columns:minmax(0,1fr);gap:10px; }
+  .word-card-chip { width:100%;text-align:start;justify-content:flex-start;min-height:48px;font-size:.9rem;line-height:1.8;box-sizing:border-box; }
+  .anatomy-interactive-stage { margin-block:20px;overflow:visible;isolation:isolate; }
+  .anatomy-interactive-stage__img { border-radius:12px; }
+  .journey-app .anatomy-drop-pin { width:44px;min-width:44px;max-width:44px;height:44px;min-height:44px;padding:0;display:grid;place-items:center;border-radius:14px;gap:0;box-sizing:border-box; }
+  .anatomy-drop-pin__value { display:none; }
+  .anatomy-drop-pin__letter { width:28px;height:28px;line-height:1;font-size:1rem; }
+  .anatomy-drop-pin--filled { border-style:solid;box-shadow:0 0 0 3px #7c354220; }
+  .anatomy-drop-pin--filled::after { content:'✓';position:absolute;top:-6px;right:-5px;font-size:12px;line-height:18px;width:18px;height:18px;border-radius:50%;background:var(--heading-burgundy);color:white; }
+  .anatomy-mobile-assignments { display:grid;gap:8px;margin-block:18px; }
+  .anatomy-mobile-assignments > div { display:flex;gap:10px;align-items:center;padding:10px 12px;background:var(--bg-subtle);border:1px solid var(--border-color);border-radius:12px;font-size:.9rem;line-height:1.85; }
+  .anatomy-assignment-marker { flex-shrink:0;width:28px;height:28px;display:grid;place-items:center;background:var(--heading-burgundy);color:white;border-radius:50%; }
+  .anatomy-hotspot__letter { display:none; }
+  .journey-app .anatomy-hotspot--organ { width:9%;height:auto;aspect-ratio:1;min-width:28px;min-height:28px;max-width:44px; }
+  .anatomy-mobile-selection { display:block;padding:12px;background:var(--selected-bg);border:1px solid var(--selected-border);border-radius:12px;line-height:1.9; }
+  .fill-in-sentence-card,.fill-in-word-bank { padding:12px; }
+  .fill-in-blank-slot { max-width:100%;white-space:normal;line-height:1.8; }
+  .villi-models-grid { grid-template-columns:minmax(0,1fr); }
+  .villi-criterion-row { flex-direction:column;align-items:stretch; }
+  .villi-criterion-row__buttons { display:grid;grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .matching-card { font-size:.9rem;line-height:1.85; }
+  .read-aloud { width:100%;align-items:stretch; }
+  .read-aloud__button { width:100%;min-height:48px;justify-content:center;white-space:normal;line-height:1.8; }
+  .read-aloud small { max-width:100%; }
+  .page-reader { position:static;width:auto;max-width:none;margin:0 12px 16px;padding:10px;box-shadow:none; }
+  .journey-app { padding-bottom:env(safe-area-inset-bottom,0px); }
+}
 @media(max-width:700px) { .admin-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }.admin-workspace { padding:16px; }.student-reports > section form { grid-template-columns:1fr; }.admin-panel { min-width:0;width:100%;box-sizing:border-box; }.challenge-status { padding:12px;gap:10px; } }
