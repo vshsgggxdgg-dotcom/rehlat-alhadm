@@ -1,4 +1,5 @@
 import React from 'react';
+import { medalName } from '../../content/journeyNames';
 import type { StationIllustrationKey } from '../../content/schema';
 import { normalizeAvatarId, type AvatarId } from '../../domain/types';
 
@@ -57,7 +58,10 @@ export const StudentAvatarIllustration: React.FC<{readonly avatarId?: AvatarId |
  return <img className="student-avatar-3d" src={`/assets/3d/${meta.id}.webp`} alt={`شخصية ${meta.nameAr}`} width={size} height={size} style={{objectFit:'contain',background:'transparent',flexShrink:0}}/>;
 };
 
-export const LevelBadgeIllustration: React.FC<{readonly order:number;readonly earned:boolean;readonly size?:number}> = ({order,earned,size=72}) => <span className={`achievement-medal ${earned?'':'achievement-medal--locked'}`} role="img" aria-label={`شارة المستوى ${order} ${earned?'مكتسبة':'لم تكتسب بعد'}`} style={{width:size,height:size}}><img src="/assets/3d/achievement.webp" alt="" loading="lazy"/><b>{order.toLocaleString('ar-EG')}</b></span>;
+export const LevelBadgeIllustration: React.FC<{readonly order:number;readonly earned:boolean;readonly size?:number}> = ({order,earned,size=72}) => {
+ const designs=['explorer','pathfinder','scientist','treasure','absorption','champion'];
+ return <span className={`achievement-medal ${earned?'':'achievement-medal--locked'}`} role="img" aria-label={`${medalName(order)} — ${earned?'مكتسب':'لم يُكتسب بعد'}`} style={{width:size,height:size}}><img src={`/assets/badges/${designs[order-1]??designs[0]}-v1.webp`} alt="" width={size} height={size} loading="lazy"/></span>;
+};
 
 export const StationIllustration: React.FC<{readonly illustrationKey: StationIllustrationKey}> = ({illustrationKey}) => {
  const files:Record<string,string>={'station-1-mouth':'oral-cavity-salivary','station-2-esophagus':'digestive-tract-pathway','station-3-stomach':'digestive-juices-glands','station-4-small-intestine':'liver-bile-duodenum','station-5-villi-absorption':'villi-microstructure','station-6-large-intestine':'large-intestine-excretion'};
